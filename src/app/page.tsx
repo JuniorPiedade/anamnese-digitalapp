@@ -1,18 +1,16 @@
-'use client';
-
 import React from 'react';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-[#0b0f19]">
-      <div className="max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
+    <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', backgroundColor: '#0b0f19' }}>
+      <div style={{ maxWidth: '448px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '32px', backdropFilter: 'blur(12px)' }}>
+        <h1 style={{ marginBottom: '8px', fontSize: '30px', fontWeight: 'bold', color: '#ffffff' }}>
           Anamnese Digital ✨
         </h1>
-        <p className="mb-6 text-zinc-400">
+        <p style={{ marginBottom: '24px', color: '#a1a1aa' }}>
           O sistema de fichas inteligente para profissionais de estética.
         </p>
-        <div className="rounded-xl bg-emerald-500/10 p-4 border border-emerald-500/25 text-emerald-400 font-medium text-sm">
+        <div style={{ borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '16px', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#34d399', fontWeight: '500', fontSize: '14px' }}>
           A estrutura base foi criada com sucesso! 🚀
         </div>
       </div>
