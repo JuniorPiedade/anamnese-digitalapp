@@ -1,5 +1,5 @@
 {
-  "name": "klinni-ia",
+  "name": "anamnese-digital",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -8,13 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "15.1.0",
-    "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "autoprefixer": "10.4.19",
-    "postcss": "8.4.38",
-    "tailwindcss": "3.4.3"
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
   }
 }
