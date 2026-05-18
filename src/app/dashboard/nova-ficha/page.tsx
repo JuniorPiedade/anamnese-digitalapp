@@ -8,22 +8,16 @@ import {
   PenTool, 
   ArrowLeft, 
   ArrowRight, 
-  Check,
-  ChevronRight
+  Check
 } from 'lucide-react';
 
 export default function NovaFichaPage() {
   const [step, setStep] = useState(1);
 
-  // Estados do Formulário (Exemplo estrutural completo)
   const [formData, setFormData] = useState({
-    // Passo 1
     nome: '', dataNascimento: '', cpf: '', telefone: '', profissao: '',
-    // Passo 2
     gestante: 'nao', alergias: '', medicamentos: '', problemasCardiacos: 'nao', queloide: 'nao',
-    // Passo 3
     exposicaoSol: 'nao', fuma: 'nao', praticaExercicio: 'sim', rotinaSkincare: '',
-    // Passo 4
     aceitaTermos: false
   });
 
@@ -36,7 +30,7 @@ export default function NovaFichaPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Ficha salva com sucesso na memória! Pronta para ir para o banco de dados.");
+    alert("Ficha salva com sucesso!");
     window.location.href = '/dashboard';
   };
 
@@ -50,7 +44,7 @@ export default function NovaFichaPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar ao Painel
           </a>
           <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">Ficha de Anamnese Corporal & Facial</span>
-          <div className="w-20"></div> {/* Spacer balanceador */}
+          <div className="w-20"></div>
         </div>
       </header>
 
@@ -71,8 +65,8 @@ export default function NovaFichaPage() {
 
               return (
                 <div key={item.id} className="flex flex-col items-center flex-1 relative">
-                  {/* Linha conectora */}
-                  {item.id border-t-2 > 1 && (
+                  {/* Linha conectora ajustada e corrigida */}
+                  {item.id > 1 && (
                     <div className={`absolute top-5 left-[-50%] right-[50%] h-[2px] -z-10 transition-colors ${
                       step >= item.id ? 'bg-blue-600' : 'bg-slate-200'
                     }`} />
@@ -179,8 +173,7 @@ export default function NovaFichaPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/40">
                     <div>
-                      <span className="text-xs font-semibold text-slate-700 block">Exposição solar frequente/frequenta praia?</span>
-                      <span className="text-[10px] text-slate-400">Importante para avaliação de risco de manchas e peelings.</span>
+                      <span className="text-xs font-semibold text-slate-700 block">Exposição solar frequente?</span>
                     </div>
                     <div className="flex gap-4">
                       {['sim', 'nao'].map(opt => (
@@ -195,7 +188,6 @@ export default function NovaFichaPage() {
                   <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/40">
                     <div>
                       <span className="text-xs font-semibold text-slate-700 block">Tabagismo (Fuma)?</span>
-                      <span className="text-[10px] text-slate-400">O fumo impacta diretamente na oxigenação e colágeno da pele.</span>
                     </div>
                     <div className="flex gap-4">
                       {['sim', 'nao'].map(opt => (
@@ -208,8 +200,8 @@ export default function NovaFichaPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Produtos ou ácidos que usa em casa atualmente (Skincare)</label>
-                    <input type="text" value={formData.rotinaSkincare} onChange={e => handleChange('rotinaSkincare', e.target.value)} placeholder="Ex: Vitamina C, Sabonete de ácido salicílico, Protetor solar" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Produtos ou ácidos que usa em casa (Skincare)</label>
+                    <input type="text" value={formData.rotinaSkincare} onChange={e => handleChange('rotinaSkincare', e.target.value)} placeholder="Ex: Vitamina C, Protetor solar" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
                   </div>
                 </div>
               </div>
@@ -222,9 +214,9 @@ export default function NovaFichaPage() {
                 
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-slate-600 space-y-2">
                   <p className="font-bold text-slate-800">DECLARAÇÃO DE RESPONSABILIDADE E CONSENTIMENTO INFORMADO</p>
-                  <p>1. Confirmo que todas as informações prestadas neste formulário de anamnese são rigorosamente verdadeiras, não omitindo dados sobre minha saúde física, rotinas ou histórico médico.</p>
-                  <p>2. Fui devidamente informado(a) sobre as indicações, contraindicações, cuidados pós-procedimento e possíveis reações adversas inerentes aos tratamentos estéticos propostos.</p>
-                  <p>3. Autorizo a execução dos tratamentos acordados e comprometo-me a seguir à risca todas as recomendações domiciliares fornecidas pelo profissional.</p>
+                  <p>1. Confirmo que todas as informações prestadas são rigorosamente verdadeiras.</p>
+                  <p>2. Fui devidamente informado(a) sobre as indicações e contraindicações dos procedimentos.</p>
+                  <p>3. Autorizo a execução dos tratamentos acordados voluntariamente.</p>
                 </div>
 
                 <div className="pt-2">
@@ -236,12 +228,11 @@ export default function NovaFichaPage() {
                   </label>
                 </div>
 
-                {/* Bloco de Assinatura Digital Estilizado */}
                 <div className="pt-4">
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Assinatura Digital do Paciente</label>
-                  <div className="h-32 w-full rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center text-slate-400 gap-1 hover:bg-slate-50 transition-colors cursor-crosshair">
+                  <div className="h-32 w-full rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center text-slate-400 gap-1 hover:bg-slate-50 transition-colors">
                     <PenTool className="h-5 w-5 stroke-[1.5]" />
-                    <span className="text-[10px]">O paciente assina diretamente na tela do dispositivo</span>
+                    <span className="text-[10px]">O paciente assina diretamente na tela</span>
                   </div>
                 </div>
               </div>
