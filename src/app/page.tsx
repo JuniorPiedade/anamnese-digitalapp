@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 
-export default function Home() {
+export default function Home(): React.JSX.Element {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', backgroundColor: '#0b0f19' }}>
       <div style={{ maxWidth: '448px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '32px', backdropFilter: 'blur(12px)' }}>
