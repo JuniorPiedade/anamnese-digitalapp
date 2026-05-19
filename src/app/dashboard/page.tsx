@@ -49,10 +49,9 @@ export default function DashboardPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
             <FileText className="h-4 w-4" />
           </div>
-          <span className="text-base font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Klinni IA</span>
+          <span className="text-base font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Anamnese Digital</span>
         </div>
         
-        {/* Menu - Escondido no Mobile, Visível no Desktop */}
         <nav className="hidden md:flex flex-col mt-10 flex-1 space-y-1">
           <a href="#" className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600">
             <LayoutDashboard className="h-4 w-4" /> Início
@@ -66,10 +65,9 @@ export default function DashboardPage() {
         </nav>
       </aside>
 
-      {/* ÁREA CENTRAL (Ajusta o espaçamento esquerdo apenas no desktop) */}
+      {/* ÁREA CENTRAL */}
       <div className="flex-1 md:pl-64 flex flex-col">
         
-        {/* HEADER / BARRA DE BUSCA */}
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/60 bg-white/80 px-4 md:px-8 backdrop-blur-md gap-4">
           <div className="relative flex-1 max-w-xs md:max-w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -88,7 +86,6 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* CONTEÚDO PRINCIPAL */}
         <main className="p-4 md:p-8 max-w-5xl w-full mx-auto flex-1">
           
           <div className="mb-6">
@@ -96,7 +93,6 @@ export default function DashboardPage() {
             <p className="text-xs text-slate-500 mt-0.5">Gerencie seus pré-atendimentos e fichas digitais.</p>
           </div>
 
-          {/* CARD DE AÇÕES RÁPIDAS (TOTALMENTE RESPONSIVO) */}
           <div className="mb-6 md:mb-8 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/70 to-indigo-50/40 p-5 md:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900">Enviar Anamnese para o Cliente</h3>
@@ -104,7 +100,6 @@ export default function DashboardPage() {
             </div>
             
             <div className="grid grid-cols-1 sm:flex items-center gap-2 w-full lg:w-auto">
-              {/* Botão de Copiar Link */}
               <button 
                 onClick={copiarLink}
                 className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-98 transition-all shadow-sm w-full sm:w-auto"
@@ -120,7 +115,6 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              {/* Botão de Enviar WhatsApp */}
               <a 
                 href={`https://wa.me/?text=${MENSAGEM_WHATSAPP}`}
                 target="_blank"
@@ -132,13 +126,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* LISTA / TABELA DE FICHAS */}
           <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
             <div className="border-b border-slate-100 px-5 py-4">
               <h2 className="text-sm font-bold text-slate-900">Fichas Recentes</h2>
             </div>
 
-            {/* VISTA DESKTOP: TABELA TRADICIONAL */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -172,7 +164,6 @@ export default function DashboardPage() {
               </table>
             </div>
 
-            {/* VISTA MOBILE: CARDS COMPACTOS (DESIGN LIGADO E LIMPO) */}
             <div className="block md:hidden divide-y divide-slate-100">
               {fichasFiltradas.length > 0 ? (
                 fichasFiltradas.map((ficha) => (
@@ -197,7 +188,6 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        {/* MENU INFERIOR FIXO DE NAVEGAÇÃO (APENAS NO MOBILE) */}
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 px-6 py-2 flex items-center justify-around shadow-lg">
           <a href="#" className="flex flex-col items-center gap-0.5 text-blue-600">
             <LayoutDashboard className="h-4 w-4" />
@@ -213,7 +203,6 @@ export default function DashboardPage() {
           </a>
         </nav>
         
-        {/* Espaçador inferior para o conteúdo não sumir atrás do menu fixo do mobile */}
         <div className="h-16 md:hidden" />
         
       </div>
