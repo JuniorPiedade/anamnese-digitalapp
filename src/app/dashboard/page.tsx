@@ -32,7 +32,7 @@ export default function DashboardPage() {
     setTimeout(() => setCopiado(false), 2000);
   };
 
-  // Dados estáticos temporários (enquanto não conectamos o banco)
+  // Dados estáticos temporários
   const fichasExemplo = [
     { id: "1", paciente: "Mariana Silva", procedimento: "Toxina Botulínica", data: "19/05/2026", status: "Assinado" },
     { id: "2", paciente: "Beatriz Costa", procedimento: "Preenchimento Labial", data: "18/05/2026", status: "Assinado" },
@@ -106,7 +106,6 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Botão de Copiar Link */}
               <button 
                 onClick={copiarLink}
                 className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-98 transition-all shadow-sm"
@@ -122,7 +121,6 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              {/* Botão de Enviar WhatsApp */}
               <a 
                 href={`https://wa.me/?text=${MENSAGEM_WHATSAPP}`}
                 target="_blank"
@@ -154,4 +152,30 @@ export default function DashboardPage() {
                   {fichasFiltradas.length > 0 ? (
                     fichasFiltradas.map((ficha) => (
                       <tr key={ficha.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="
+                        <td className="px-6 py-4 font-semibold text-slate-900">{ficha.paciente}</td>
+                        <td className="px-6 py-4 text-slate-600">{ficha.procedimento}</td>
+                        <td className="px-6 py-4 text-slate-500">{ficha.data}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-medium">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> {ficha.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="text-center py-10 text-slate-400">
+                        Nenhum paciente encontrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </div>
+  );
+}
