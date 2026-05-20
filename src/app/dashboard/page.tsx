@@ -55,7 +55,6 @@ export default function DashboardPage() {
     if (salvas) {
       setFichas(JSON.parse(salvas));
     } else {
-      // Inicializa o localStorage com os exemplos se estiver vazio, para facilitar seu teste
       localStorage.setItem('anamnese_fichas', JSON.stringify(fichasExemploPadrao));
       setFichas(fichasExemploPadrao);
     }
@@ -70,7 +69,6 @@ export default function DashboardPage() {
     setTimeout(() => setCopiado(false), 2000);
   };
 
-  // Filtro inteligente operando sobre o estado dinâmico
   const fichasFiltradas = fichas.filter(ficha => 
     ficha.paciente?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ficha.procedimento?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -87,7 +85,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans flex flex-col md:flex-row">
       
-      {/* BARRA LATERAL / TOPO MOBILE */}
+      {/* BARRA LATERAL */}
       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 px-4 py-4 md:py-6 md:fixed md:inset-y-0 md:z-20 flex md:flex-col justify-between md:justify-start items-center md:items-stretch gap-4 shrink-0">
         <div className="flex items-center gap-3 px-2">
           <div className="h-9 w-9 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
@@ -99,7 +97,6 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Menu Desktop */}
         <nav className="hidden md:flex flex-col mt-8 flex-1 space-y-1">
           <a href="#" className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-xs font-bold text-blue-600"><LayoutDashboard className="h-4 w-4" /> Início</a>
           <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-medium text-slate-600 hover:bg-slate-50"><FileText className="h-4 w-4" /> Fichas</a>
@@ -107,7 +104,6 @@ export default function DashboardPage() {
           <a href="/dashboard/configuracoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-medium text-slate-600 hover:bg-slate-50"><Settings className="h-4 w-4" /> Ajustes</a>
         </nav>
 
-        {/* Botão de Ajustes simplificado para Mobile à direita */}
         <div className="md:hidden">
           <a href="/dashboard/configuracoes" className="p-2 text-slate-500 hover:text-slate-800 block">
             <Settings className="h-5 w-5" />
@@ -135,16 +131,14 @@ export default function DashboardPage() {
           </a>
         </header>
 
-        {/* ÁREA INTERNA DA PÁGINA */}
         <main className="p-4 md:p-8 max-w-5xl w-full mx-auto flex-1">
           
-          {/* SAUDAÇÃO */}
           <div className="mb-6">
             <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">{obterSaudacao()}</h1>
             <p className="text-[11px] text-slate-400 mt-0.5">Painel central de controle.</p>
           </div>
 
-          {/* CARD DE ENVIO DE LINK RÁPIDO */}
+          {/* CARD LINK RÁPIDO */}
           <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/60 to-indigo-50/30 p-4 md:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
                <div className="h-10 w-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center shrink-0 shadow-xs">
@@ -165,10 +159,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* TABELA / LISTAGEM DE PACIENTES */}
+          {/* LISTAGEM DE PACIENTES */}
           <div className="rounded-2xl border border-slate-200/70 bg-white shadow-xs overflow-hidden">
-            
-            {/* Desktop */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -229,7 +221,7 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {/* MODAL DE EVOLUÇÃO */}
+      {/* MODAL DE HISTÓRICO */}
       {pacienteSelecionado && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setPacienteSelecionado(null)} />
