@@ -9,6 +9,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] = useState<any | null>(null);
+  const [fichas, setFichas] = useState<any[]>([]);
   
   const [perfil, setPerfil] = useState({
     nome: "Anamnese Digital",
@@ -17,10 +18,47 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    // 1. Carrega Perfil
     const nome = localStorage.getItem('anamnese_nomeNegocio') || "Anamnese Digital";
     const nicho = localStorage.getItem('anamnese_nicho') || "Gestão Estética";
     const foto = localStorage.getItem('anamnese_fotoPerfil') || "";
     setPerfil({ nome, nicho, foto });
+
+    // 2. Carrega Fichas Dinâmicas (com Fallback estático para demonstração)
+    const fichasExemploPadrao = [
+      { 
+        id: "1", 
+        paciente: "Mariana Silva", 
+        procedimento: "Toxina Botulínica", 
+        data: "19/05/2026", 
+        status: "Assinado",
+        historico: [
+          { data: "19/05/2026", evento: "Retorno e aplicação de reforço em região de glabela." },
+          { data: "05/05/2026", evento: "Aplicação inicial de Toxina Botulínica (35U) - Full Face." },
+          { data: "05/05/2026", evento: "Primeira Anamnese Digital preenchida e assinada via WhatsApp." }
+        ]
+      },
+      { 
+        id: "2", 
+        paciente: "Beatriz Costa", 
+        procedimento: "Preenchimento Labial", 
+        data: "18/05/2026", 
+        status: "Assinado",
+        historico: [
+          { data: "18/05/2026", evento: "Preenchimento Labial com 1ml de Ácido Hialurônico (Restylane)." },
+          { data: "18/05/2026", evento: "Anamnese aprovada: sem histórico de alergias ou herpes ativa." }
+        ]
+      },
+    ];
+
+    const salvas = localStorage.getItem('anamnese_fichas');
+    if (salvas) {
+      setFichas(JSON.parse(salvas));
+    } else {
+      // Inicializa o localStorage com os exemplos se estiver vazio, para facilitar seu teste
+      localStorage.setItem('anamnese_fichas', JSON.stringify(fichasExemploPadrao));
+      setFichas(fichasExemploPadrao);
+    }
   }, []);
 
   const LINK_ANAMNESE = "https://anamnese-digitalapp.vercel.app/anamnese/cliente";
@@ -32,35 +70,10 @@ export default function DashboardPage() {
     setTimeout(() => setCopiado(false), 2000);
   };
 
-  const fichasExemplo = [
-    { 
-      id: "1", 
-      paciente: "Mariana Silva", 
-      procedimento: "Toxina Botulínica", 
-      data: "19/05/2026", 
-      status: "Assinado",
-      historico: [
-        { data: "19/05/2026", evento: "Retorno e aplicação de reforço em região de glabela." },
-        { data: "05/05/2026", evento: "Aplicação inicial de Toxina Botulínica (35U) - Full Face." },
-        { data: "05/05/2026", evento: "Primeira Anamnese Digital preenchida e assinada via WhatsApp." }
-      ]
-    },
-    { 
-      id: "2", 
-      paciente: "Beatriz Costa", 
-      procedimento: "Preenchimento Labial", 
-      data: "18/05/2026", 
-      status: "Assinado",
-      historico: [
-        { data: "18/05/2026", evento: "Preenchimento Labial com 1ml de Ácido Hialurônico (Restylane)." },
-        { data: "18/05/2026", evento: "Anamnese aprovada: sem histórico de alergias ou herpes ativa." }
-      ]
-    },
-  ];
-
-  const fichasFiltradas = fichasExemplo.filter(ficha => 
-    ficha.paciente.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ficha.procedimento.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filtro inteligente operando sobre o estado dinâmico
+  const fichasFiltradas = fichas.filter(ficha => 
+    ficha.paciente?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    ficha.procedimento?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const obterSaudacao = () => {
@@ -74,7 +87,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans flex flex-col md:flex-row">
       
-      {{/* BARRA LATERAL / TOPO MOBILE */}}
+      {/* BARRA LATERAL / TOPO MOBILE */}
       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 px-4 py-4 md:py-6 md:fixed md:inset-y-0 md:z-20 flex md:flex-col justify-between md:justify-start items-center md:items-stretch gap-4 shrink-0">
         <div className="flex items-center gap-3 px-2">
           <div className="h-9 w-9 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
@@ -86,7 +99,7 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {{/* Menu Desktop */}}
+        {/* Menu Desktop */}
         <nav className="hidden md:flex flex-col mt-8 flex-1 space-y-1">
           <a href="#" className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-xs font-bold text-blue-600"><LayoutDashboard className="h-4 w-4" /> Início</a>
           <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-medium text-slate-600 hover:bg-slate-50"><FileText className="h-4 w-4" /> Fichas</a>
@@ -94,7 +107,7 @@ export default function DashboardPage() {
           <a href="/dashboard/configuracoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-medium text-slate-600 hover:bg-slate-50"><Settings className="h-4 w-4" /> Ajustes</a>
         </nav>
 
-        {{/* Botão de Ajustes simplificado para Mobile à direita */}}
+        {/* Botão de Ajustes simplificado para Mobile à direita */}
         <div className="md:hidden">
           <a href="/dashboard/configuracoes" className="p-2 text-slate-500 hover:text-slate-800 block">
             <Settings className="h-5 w-5" />
@@ -102,10 +115,10 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {{/* CONTEÚDO PRINCIPAL (Garante o espaçamento da Sidebar no Desktop) */}}
+      {/* CONTEÚDO PRINCIPAL */}
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         
-        {{/* CABEÇALHO COM BUSCA E BOTÃO ACCORDING */}}
+        {/* CABEÇALHO */}
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/60 bg-white/80 px-4 md:px-8 backdrop-blur-md gap-4">
           <div className="relative flex-1 max-w-xs md:max-w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -122,16 +135,16 @@ export default function DashboardPage() {
           </a>
         </header>
 
-        {{/* ÁREA INTERNA DA PÁGINA */}}
+        {/* ÁREA INTERNA DA PÁGINA */}
         <main className="p-4 md:p-8 max-w-5xl w-full mx-auto flex-1">
           
-          {{/* SAUDAÇÃO */}}
+          {/* SAUDAÇÃO */}
           <div className="mb-6">
             <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">{obterSaudacao()}</h1>
             <p className="text-[11px] text-slate-400 mt-0.5">Painel central de controle.</p>
           </div>
 
-          {{/* CARD DE ENVIO DE LINK RÁPIDO */}}
+          {/* CARD DE ENVIO DE LINK RÁPIDO */}
           <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/60 to-indigo-50/30 p-4 md:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
                <div className="h-10 w-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center shrink-0 shadow-xs">
@@ -152,10 +165,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {{/* TABELA / LISTAGEM DE PACIENTES */}}
+          {/* TABELA / LISTAGEM DE PACIENTES */}
           <div className="rounded-2xl border border-slate-200/70 bg-white shadow-xs overflow-hidden">
             
-            {{/* Desktop */}
+            {/* Desktop */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -173,7 +186,13 @@ export default function DashboardPage() {
                       <td className="px-6 py-4 text-slate-500">{ficha.procedimento}</td>
                       <td className="px-6 py-4 text-slate-400">{ficha.data}</td>
                       <td className="px-6 py-4 text-right">
-                        <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-lg font-bold text-[9px] uppercase border border-emerald-100">✓ {ficha.status}</span>
+                        <span className={`px-2.5 py-1 rounded-lg font-bold text-[9px] uppercase border ${
+                          ficha.status === 'Assinado' 
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                            : 'bg-amber-50 text-amber-600 border-amber-100'
+                        }`}>
+                          {ficha.status === 'Assinado' ? '✓ Assinado' : '⏱ Pendente'}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -184,7 +203,7 @@ export default function DashboardPage() {
               </table>
             </div>
 
-            {{/* Mobile */}
+            {/* Mobile */}
             <div className="block md:hidden divide-y divide-slate-100">
               {fichasFiltradas.map((ficha) => (
                 <div key={ficha.id} onClick={() => setPacienteSelecionado(ficha)} className="p-4 active:bg-slate-50 flex items-center justify-between gap-4 cursor-pointer">
@@ -193,7 +212,13 @@ export default function DashboardPage() {
                     <span className="text-[11px] text-slate-500 truncate">{ficha.procedimento}</span>
                     <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><Calendar className="h-3 w-3" /> {ficha.data}</span>
                   </div>
-                  <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md font-bold text-[9px] uppercase border border-emerald-100 shrink-0">✓ {ficha.status}</span>
+                  <span className={`px-2 py-0.5 rounded-md font-bold text-[9px] uppercase border shrink-0 ${
+                    ficha.status === 'Assinado' 
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
+                  }`}>
+                    {ficha.status === 'Assinado' ? '✓ Assinado' : '⏱ Pendente'}
+                  </span>
                 </div>
               ))}
               {fichasFiltradas.length === 0 && (
@@ -204,12 +229,12 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {{/* LINHA DO TEMPO / MODAL DE EVOLUÇÃO (RESPONSIVO) */}}
+      {/* MODAL DE EVOLUÇÃO */}
       {pacienteSelecionado && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs animate-fade-in" onClick={() => setPacienteSelecionado(null)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setPacienteSelecionado(null)} />
           
-          <div className="relative w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] md:max-h-[75vh] z-10 transition-transform">
+          <div className="relative w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] md:max-h-[75vh] z-10">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="text-xs font-bold text-slate-900">{pacienteSelecionado.paciente}</h3>
