@@ -1,117 +1,226 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  LayoutDashboard, FileText, Users, Plus, Search, Copy, Share2, Check, Settings, Calendar, Clock, X
+  User, 
+  HeartPulse, 
+  Sparkles, 
+  PenTool, 
+  ArrowLeft, 
+  ArrowRight, 
+  Check,
+  Smartphone
 } from 'lucide-react';
 
-export default function DashboardPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [copiado, setCopiado] = useState(false);
-  const [pacienteSelecionado, setPacienteSelecionado] = useState<any | null>(null);
-  const [primeiroNome, setPrimeiroNome] = useState("Profissional");
-  
-  const [perfil, setPerfil] = useState({
-    nome: "Anamnese Digital",
-    nicho: "Gestão Estética",
-    foto: ""
+export default function FichaClientePublicaPage() {
+  const [step, setStep] = useState(1);
+  const [enviado, setEnviado] = useState(false);
+
+  const [formData, setFormData] = useState({
+    nome: '', dataNascimento: '', cpf: '', telefone: '', profissao: '',
+    gestante: 'nao', alergias: '', medicamentos: '', problemasCardiacos: 'nao', queloide: 'nao',
+    exposicaoSol: 'nao', fuma: 'nao', praticaExercicio: 'sim', rotinaSkincare: '',
+    aceitaTermos: false
   });
 
-  useEffect(() => {
-    const nome = localStorage.getItem('anamnese_nomeNegocio') || "Anamnese Digital";
-    const nicho = localStorage.getItem('anamnese_nicho') || "Gestão Estética";
-    const foto = localStorage.getItem('anamnese_fotoPerfil') || "";
-    
-    setPerfil({ nome, nicho, foto });
-    setPrimeiroNome(nome.trim().split(' ')[0]);
-  }, []);
-
-  const LINK_ANAMNESE = "https://anamnese-digitalapp.vercel.app/anamnese/cliente";
-  const MENSAGEM_WHATSAPP = encodeURIComponent(`Olá! Por favor, preencha sua ficha digital:\n${LINK_ANAMNESE}`);
-
-  const copiarLink = () => {
-    navigator.clipboard.writeText(LINK_ANAMNESE);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const fichasExemplo = [
-    { 
-      id: "1", 
-      paciente: "Mariana Silva", 
-      procedimento: "Toxina Botulínica", 
-      data: "19/05/2026", 
-      status: "Assinado",
-      historico: [
-        { data: "19/05/2026", evento: "Retorno e aplicação de reforço em região de glabela." },
-        { data: "05/05/2026", evento: "Primeira Anamnese Digital preenchida via WhatsApp." }
-      ]
-    },
-    { 
-      id: "2", 
-      paciente: "Beatriz Costa", 
-      procedimento: "Preenchimento Labial", 
-      data: "18/05/2026", 
-      status: "Assinado",
-      historico: [
-        { data: "18/05/2026", evento: "Preenchimento Labial com 1ml de Ácido Hialurônico." }
-      ]
-    },
-  ];
+  const avancar = () => setStep(prev => Math.min(prev + 1, 4));
+  const voltar = () => setStep(prev => Math.max(prev - 1, 1));
 
-  const fichasFiltradas = fichasExemplo.filter(ficha => 
-    ficha.paciente.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ficha.procedimento.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.aceitaTermos) return;
+    setEnviado(true);
+  };
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans flex flex-col md:flex-row w-full overflow-x-hidden">
-      
-      {/* SIDEBAR CORRIGIDA: TRAVADA COM LARGURA REAL E SHRINK-0 NO DESKTOP */}
-      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 px-5 py-5 md:py-6 flex md:flex-col justify-between md:justify-start items-center md:items-stretch gap-4 shrink-0">
-        <div className="flex items-center gap-3 w-full px-1">
-          <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
-            {perfil.foto ? <img src={perfil.foto} className="h-full w-full object-cover" alt="Perfil" /> : <FileText className="text-blue-600 h-5 w-5" />}
+  if (enviado) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-center antialiased">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
+            <Check className="h-6 w-6 stroke-[3]" />
           </div>
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-sm font-bold text-slate-900 truncate block w-full">{perfil.nome}</span>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-tight truncate block w-full mt-0.5">{perfil.nicho}</span>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Obrigado, {formData.nome.split(' ')[0]}!</h1>
+          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+            Sua ficha de anamnese foi respondida e enviada com sucesso. Seus dados foram salvos e protegidos.
+          </p>
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center justify-center gap-1">
+              <Smartphone className="h-3 w-3" /> Você já pode fechar esta aba.
+            </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
+      
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md text-center">
+        <span className="text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-wider uppercase">
+          Formulário de Pré-Atendimento Estético
+        </span>
+      </header>
+
+      <main className="mx-auto max-w-xl px-4 py-8 sm:px-6">
         
-        <nav className="hidden md:flex flex-col mt-8 flex-1 space-y-1 w-full">
-          <a href="#" className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 w-full"><LayoutDashboard className="h-4 w-4 shrink-0" /> Início</a>
-          <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 w-full"><FileText className="h-4 w-4 shrink-0" /> Fichas</a>
-          <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 w-full"><Users className="h-4 w-4 shrink-0" /> Pacientes</a>
-          <a href="/dashboard/configuracoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 w-full"><Settings className="h-4 w-4 shrink-0" /> Ajustes</a>
-        </nav>
-      </aside>
+        <div className="mb-8">
+          <div className="flex items-center justify-between max-w-xs mx-auto">
+            {[
+              { id: 1, icon: User },
+              { id: 2, icon: HeartPulse },
+              { id: 3, icon: Sparkles },
+              { id: 4, icon: PenTool },
+            ].map((item) => {
+              const IconComp = item.icon;
+              const isDone = step > item.id;
+              const isActive = step === item.id;
 
-      {/* ÁREA DE CONTEÚDO PRINCIPAL (OCUPA TODO O ESPAÇO RESTANTE) */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
-        
-        {/* HEADER COMPLETAMENTE ALINHADO */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/60 bg-white/80 px-4 md:px-8 backdrop-blur-md gap-4 w-full">
-          <div className="relative flex-1 max-w-xs md:max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Buscar por paciente ou procedimento..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-9 pr-4 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+              return (
+                <div key={item.id} className="flex items-center flex-1 last:flex-none relative justify-center">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
+                    isDone ? 'bg-blue-600 border-blue-600 text-white' :
+                    isActive ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' :
+                    'bg-white border-slate-200 text-slate-400'
+                  }`}>
+                    {isDone ? <Check className="h-3 w-3 stroke-[3]" /> : <IconComp className="h-3.5 w-3.5" />}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <a href="/dashboard/nova-ficha" className="flex items-center gap-1.5 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition-all whitespace-nowrap"><Plus className="h-3.5 w-3.5" /> Nova Ficha</a>
-        </header>
+        </div>
 
-        {/* CONTAINER DASHBOARD */}
-        <main className="p-4 md:p-8 max-w-5xl w-full mx-auto flex-1">
-          <div className="mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Bem-vinda, {primeiroNome}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Painel de controle {perfil.nicho.toLowerCase()}.</p>
-          </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {step === 1 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Dados Pessoais</h2>
+                  <p className="text-[11px] text-slate-400">Insira suas informações de identificação.</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Nome Completo</label>
+                  <input type="text" value={formData.nome} onChange={e => handleChange('nome', e.target.value)} required placeholder="Seu nome completo" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Nascimento</label>
+                    <input type="date" value={formData.dataNascimento} onChange={e => handleChange('dataNascimento', e.target.value)} required className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">WhatsApp</label>
+                    <input type="tel" value={formData.telefone} onChange={e => handleChange('telefone', e.target.value)} required placeholder="(00) 00000-0000" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+                  </div>
+                </div>
+              </div>
+            )}
 
-          {/* CARD DE COMPARTILHAMENTO CORRIGIDO CONTRA COMPRESSÃO VISUAL */}
-          <div className="mb-6 md:mb-8 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/70 to-indigo-50/40 p-5 md:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-            <div className="flex items-center gap-4 min-w-0">
-               <div className="h-12 w-12 rounded-xl bg-white border border-blue-100 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                  {perfil.foto ? <img src={perfil.foto} className="h-full w-full object-cover" alt="Perfil" /> : <Share2 className="text-blue-500 h-5 w-5" />}
-               </div>
-               <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">Enviar Anamnese</h3>
-                  <p className="text-[11px] text-slate-500
+            {step === 2 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Histórico de Saúde</h2>
+                  <p className="text-[11px] text-slate-400">Suas respostas garantem a sua segurança durante o procedimento.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/40 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-slate-700">Gestante ou lactante?</span>
+                    <div className="flex gap-3">
+                      {['sim', 'nao'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600 cursor-pointer">
+                          <input type="radio" name="gestante" value={opt} checked={formData.gestante === opt} onChange={e => handleChange('gestante', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/>
+                          {opt}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/40 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-slate-700">Tem queloides?</span>
+                    <div className="flex gap-3">
+                      {['sim', 'nao'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600 cursor-pointer">
+                          <input type="radio" name="queloide" value={opt} checked={formData.queloide === opt} onChange={e => handleChange('queloide', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/>
+                          {opt}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Alergias conhecidas</label>
+                    <textarea value={formData.alergias} onChange={e => handleChange('alergias', e.target.value)} placeholder="Ex: Medicamentos, cosméticos, nenhum..." rows={2} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all resize-none"/>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Hábitos Diários</h2>
+                  <p className="text-[11px] text-slate-400">Entendendo sua rotina.</p>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+                    <span className="text-xs font-semibold text-slate-700">Fuma?</span>
+                    <div className="flex gap-3">
+                      {['sim', 'nao'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600">
+                          <input type="radio" name="fuma" value={opt} checked={formData.fuma === opt} onChange={e => handleChange('fuma', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/> {opt}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Procedimento de interesse</label>
+                    <input type="text" value={formData.rotinaSkincare} onChange={e => handleChange('rotinaSkincare', e.target.value)} placeholder="Ex: Preenchimento, Botox, Limpeza de pele" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Consentimento</h2>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 max-h-36 overflow-y-auto text-[10px] leading-relaxed text-slate-600 space-y-2">
+                  <p className="font-bold text-slate-700">DECLARAÇÃO DE RESPONSABILIDADE</p>
+                  <p>1. Confirmo que todas as informações prestadas são rigorosamente verdadeiras.</p>
+                  <p>2. Fui informado(a) sobre as indicações e cuidados do procedimento.</p>
+                </div>
+                <div className="pt-1">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" required checked={formData.aceitaTermos} onChange={e => handleChange('aceitaTermos', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600"/>
+                    <span className="text-[11px] text-slate-600 leading-tight">Declaro que li e aceito os termos.</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              <button type="button" onClick={voltar} disabled={step === 1} className={`flex items-center gap-1 text-xs font-semibold text-slate-500 px-2 py-1.5 ${step === 1 ? 'opacity-0 pointer-events-none' : ''}`}>
+                <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+              </button>
+
+              {step < 4 ? (
+                <button type="button" onClick={avancar} className="flex items-center gap-1 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm">
+                  Avançar <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <button type="submit" disabled={!formData.aceitaTermos} className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-50">
+                  Enviar Respostas
+                </button>
+              )}
+            </div>
+
+          </form>
+        </div>
+      </main>
+    </div>
+  );
+}
