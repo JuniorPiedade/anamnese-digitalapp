@@ -82,8 +82,7 @@ export default function ConfiguracoesPage() {
         </div>
         <nav className="hidden md:flex flex-col mt-10 flex-1 space-y-1">
           <a href="/dashboard" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><LayoutDashboard className="h-4 w-4" /> Início</a>
-          <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><FileText className="h-4 w-4" /> Fichas de Anamnese</a>
-          <a href="#" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><Users className="h-4 w-4" /> Meus Pacientes</a>
+          <a href="/dashboard/nova-ficha" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><FileText className="h-4 w-4" /> Nova Ficha</a>
           <a href="/dashboard/configuracoes" className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600"><Settings className="h-4 w-4" /> Configurações</a>
         </nav>
       </aside>
@@ -144,7 +143,7 @@ export default function ConfiguracoesPage() {
               <Save className="h-4 w-4" />
               {salvando ? "Salvando..." : "Salvar Alterações"}
             </button>
-            {salvoSucesso && <p className="text-center sm:text-left text-xs font-bold text-emerald-600 animate-bounce">✓ Perfil updated com sucesso!</p>}
+            {salvoSucesso && <p className="text-center sm:text-left text-xs font-bold text-emerald-600 animate-bounce">✓ Perfil atualizado com sucesso!</p>}
           </form>
         </main>
       </div>
