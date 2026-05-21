@@ -3,31 +3,48 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  LayoutDashboard, FileText, Users, Settings, Plus, Search, Filter, ArrowRight, CheckCircle2, Clock
+  LayoutDashboard, FileText, Settings, Plus, Search, Filter, CheckCircle2, Clock, Share2
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const [busca, setBusca] = useState("");
   const [nomeNegocio, setNomeNegocio] = useState("Meu Negócio");
   const [nicho, setNicho] = useState("Estética");
+  const [baseUrl, setBaseUrl] = useState("");
 
-  // Carrega os dados salvos nas configurações para personalizar a Dashboard
+  // Captura a URL atual do projeto para gerar o link correto do cliente
   useEffect(() => {
     const savedNome = localStorage.getItem('anamnese_nomeNegocio');
     const savedNicho = localStorage.getItem('anamnese_nicho');
     if (savedNome) setNomeNegocio(savedNome);
     if (savedNicho) setNicho(savedNicho);
+    
+    // Define a URL base (ex: https://seu-app.vercel.app)
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
   }, []);
 
-  // Dados fictícios para simular a listagem e busca de fichas
+  // Dados com os respectivos WhatsApps para simular o disparo real
   const ultimasFichas = [
-    { id: 1, cliente: "Mariana Silva", procedimento: "Lash Designer", data: "Hoje, 09:30", status: "Concluída" },
-    { id: 2, cliente: "Beatriz Costa", procedimento: "Limpeza de Pele", data: "Ontem, 16:15", status: "Concluída" },
-    { id: 3, cliente: "Juliana Tavares", procedimento: "Botox / Injetáveis", data: "20 Mai, 14:00", status: "Concluída" },
-    { id: 4, cliente: "Fernanda Ribeiro", procedimento: "Maquiagem", data: "19 Mai, 11:30", status: "Pendente" },
+    { id: 1, cliente: "Mariana Silva", procedimento: "Lash Designer", data: "Hoje, 09:30", status: "Concluída", telefone: "5571999999999" },
+    { id: 2, cliente: "Beatriz Costa", procedimento: "Limpeza de Pele", data: "Ontem, 16:15", status: "Concluída", telefone: "5571999999999" },
+    { id: 3, cliente: "Juliana Tavares", procedimento: "Botox / Injetáveis", data: "20 Mai, 14:00", status: "Concluída", telefone: "5571999999999" },
+    { id: 4, cliente: "Fernanda Ribeiro", procedimento: "Maquiagem", data: "19 Mai, 11:30", status: "Pendente", telefone: "5571999999999" },
   ];
 
-  // Filtra as fichas de acordo com o que você digitar na barra de busca
+  // Função cirúrgica que monta a mensagem e abre o WhatsApp
+  const enviarLinkWhatsapp = (clienteNome: string, telefone: string) => {
+    const linkFicha = `${baseUrl}/anamnese/cliente`;
+    
+    const textoMensagem = `Olá, ${clienteNome}! ✨\n\nPara realizarmos o seu procedimento com total segurança, preciso que preencha a sua *Ficha de Anamnese Digital* antes do nosso atendimento.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFicha}\n\nMuito obrigada! ❤️`;
+    
+    const urlMensagemUrlEncoded = encodeURIComponent(textoMensagem);
+    const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefone}&text=${urlMensagemUrlEncoded}`;
+    
+    window.open(linkWhatsapp, '_blank');
+  };
+
   const fichasFiltradas = ultimasFichas.filter(ficha => 
     ficha.cliente.toLowerCase().includes(busca.toLowerCase()) ||
     ficha.procedimento.toLowerCase().includes(busca.toLowerCase())
@@ -121,7 +138,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* LISTA DE FICHAS */}
+            {/* LISTA DE FICHAS COM DISPARO DE LINK */}
             <div className="divide-y divide-slate-100">
               {fichasFiltradas.length > 0 ? (
                 fichasFiltradas.map((ficha) => (
@@ -140,15 +157,22 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                         ficha.status === 'Concluída' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                       }`}>
                         {ficha.status === 'Concluída' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                         {ficha.status}
                       </span>
-                      <button className="text-slate-400 hover:text-blue-600 transition-all p-1 group-hover:translate-x-0.5 duration-200">
-                        <ArrowRight className="h-4 w-4" />
+                      
+                      {/* BOTÃO PREMIUM DE ENVIAR LINK VIA WHATSAPP */}
+                      <button 
+                        onClick={() => enviarLinkWhatsapp(ficha.cliente, ficha.telefone)}
+                        title="Enviar ficha via WhatsApp"
+                        className="flex items-center gap-1.5 border border-slate-200 hover:border-emerald-200 bg-white hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 hover:text-emerald-700 transition-all"
+                      >
+                        <Share2 className="h-3 w-3" />
+                        <span className="hidden sm:inline">Enviar Link</span>
                       </button>
                     </div>
                   </div>
