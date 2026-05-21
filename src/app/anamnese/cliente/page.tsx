@@ -1,226 +1,352 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  User, 
-  HeartPulse, 
-  Sparkles, 
-  PenTool, 
-  ArrowLeft, 
-  ArrowRight, 
-  Check,
-  Smartphone
+  User, ShieldAlert, Activity, Eye, Sparkles, Droplet, Syringe, Check, FileText, Trash2 
 } from 'lucide-react';
 
-export default function FichaClientePublicaPage() {
-  const [step, setStep] = useState(1);
-  const [enviado, setEnviado] = useState(false);
+export default function FormularioAnamneseClientePage() {
+  // Controle de Abas/Etapas ou Serviço Selecionado para simular o comportamento modular dinâmico
+  const [servicoSelecionado, setServicoSelecionado] = useState<"lash" | "make" | "pele" | "botox" | "">("");
+  const [sucesso, setSucesso] = useState(false);
+  const [assinado, setAssinado] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawing = useRef(false);
 
-  const [formData, setFormData] = useState({
-    nome: '', dataNascimento: '', cpf: '', telefone: '', profissao: '',
-    gestante: 'nao', alergias: '', medicamentos: '', problemasCardiacos: 'nao', queloide: 'nao',
-    exposicaoSol: 'nao', fuma: 'nao', praticaExercicio: 'sim', rotinaSkincare: '',
-    aceitaTermos: false
-  });
+  // --- LÓGICA DO CANVAS DE ASSINATURA ---
+  const iniciarDesenho = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!canvasRef.current) return;
+    isDrawing.current = true;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#0f172a'; // slate-900
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    ctx.beginPath();
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
   };
 
-  const avancar = () => setStep(prev => Math.min(prev + 1, 4));
-  const voltar = () => setStep(prev => Math.max(prev - 1, 1));
+  const desenhar = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+    setAssinado(true);
+  };
+
+  const pararDesenho = () => {
+    isDrawing.current = false;
+  };
+
+  const limparAssinatura = () => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setAssinado(false);
+  };
+
+  const enviarFormulario = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.aceitaTermos) return;
-    setEnviado(true);
+    if (!assinado) {
+      alert("Por favor, preencha a sua assinatura digital antes de enviar.");
+      return;
+    }
+    setSucesso(true);
   };
 
-  if (enviado) {
+  if (sucesso) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-center antialiased">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
-            <Check className="h-6 w-6 stroke-[3]" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-slate-800 antialiased font-sans">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
+          <div className="h-16 w-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
+            <Check className="h-8 w-8" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Obrigado, {formData.nome.split(' ')[0]}!</h1>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Sua ficha de anamnese foi respondida e enviada com sucesso. Seus dados foram salvos e protegidos.
-          </p>
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center justify-center gap-1">
-              <Smartphone className="h-3 w-3" /> Você já pode fechar esta aba.
-            </p>
-          </div>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Ficha Enviada com Sucesso!</h2>
+          <p className="text-xs text-slate-500 mt-2">Obrigado por responder. Suas informações já estão salvas e seguras no painel do profissional.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
-      
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md text-center">
-        <span className="text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-wider uppercase">
-          Formulário de Pré-Atendimento Estético
-        </span>
-      </header>
-
-      <main className="mx-auto max-w-xl px-4 py-8 sm:px-6">
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-8 px-4">
+      <div className="max-w-xl w-full mx-auto bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         
-        <div className="mb-8">
-          <div className="flex items-center justify-between max-w-xs mx-auto">
-            {[
-              { id: 1, icon: User },
-              { id: 2, icon: HeartPulse },
-              { id: 3, icon: Sparkles },
-              { id: 4, icon: PenTool },
-            ].map((item) => {
-              const IconComp = item.icon;
-              const isDone = step > item.id;
-              const isActive = step === item.id;
-
-              return (
-                <div key={item.id} className="flex items-center flex-1 last:flex-none relative justify-center">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
-                    isDone ? 'bg-blue-600 border-blue-600 text-white' :
-                    isActive ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' :
-                    'bg-white border-slate-200 text-slate-400'
-                  }`}>
-                    {isDone ? <Check className="h-3 w-3 stroke-[3]" /> : <IconComp className="h-3.5 w-3.5" />}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        {/* Cabeçalho do Formulário */}
+        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Ficha de Anamnese Digital</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Por favor, responda com atenção. Seus dados estão protegidos.</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={enviarFormulario} className="p-6 space-y-8">
+          
+          {/* SELETOR DINÂMICO DE PROCEDIMENTO (Simulação de injeção automática) */}
+          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+            <label className="text-xs font-bold text-blue-900 block mb-2">Selecione o procedimento do agendamento:</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setServicoSelecionado("lash")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'lash' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Eye className="h-3.5 w-3.5" /> Lash Designer</button>
+              <button type="button" onClick={() => setServicoSelecionado("make")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'make' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Sparkles className="h-3.5 w-3.5" /> Maquiagem</button>
+              <button type="button" onClick={() => setServicoSelecionado("pele")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'pele' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Droplet className="h-3.5 w-3.5" /> Limpeza de Pele</button>
+              <button type="button" onClick={() => setServicoSelecionado("botox")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'botox' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Syringe className="h-3.5 w-3.5" /> Botox / Preenchedores</button>
+            </div>
+          </div>
+
+          {/* 1. BLOCO CORE (OBRIGATÓRIO) */}
+          <div className="space-y-4">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><User className="h-3.5 w-3.5 text-slate-400" /> 1. Bloco Core (Obrigatório)</h2>
             
-            {step === 1 && (
-              <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Nome Completo</label>
+                <input required type="text" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Dados Pessoais</h2>
-                  <p className="text-[11px] text-slate-400">Insira suas informações de identificação.</p>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Data de Nascimento</label>
+                  <input required type="date" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Nome Completo</label>
-                  <input type="text" value={formData.nome} onChange={e => handleChange('nome', e.target.value)} required placeholder="Seu nome completo" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Nascimento</label>
-                    <input type="date" value={formData.dataNascimento} onChange={e => handleChange('dataNascimento', e.target.value)} required className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">WhatsApp</label>
-                    <input type="tel" value={formData.telefone} onChange={e => handleChange('telefone', e.target.value)} required placeholder="(00) 00000-0000" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
-                  </div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Profissão / Ocupação</label>
+                  <input required type="text" placeholder="Ex: Advogada" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
                 </div>
               </div>
-            )}
 
-            {step === 2 && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Histórico de Saúde</h2>
-                  <p className="text-[11px] text-slate-400">Suas respostas garantem a sua segurança durante o procedimento.</p>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/40 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">Gestante ou lactante?</span>
-                    <div className="flex gap-3">
-                      {['sim', 'nao'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600 cursor-pointer">
-                          <input type="radio" name="gestante" value={opt} checked={formData.gestante === opt} onChange={e => handleChange('gestante', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/>
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/40 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">Tem queloides?</span>
-                    <div className="flex gap-3">
-                      {['sim', 'nao'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600 cursor-pointer">
-                          <input type="radio" name="queloide" value={opt} checked={formData.queloide === opt} onChange={e => handleChange('queloide', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/>
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Alergias conhecidas</label>
-                    <textarea value={formData.alergias} onChange={e => handleChange('alergias', e.target.value)} placeholder="Ex: Medicamentos, cosméticos, nenhum..." rows={2} className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all resize-none"/>
-                  </div>
-                </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">WhatsApp</label>
+                <input required type="tel" placeholder="(71) 99999-9999" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
               </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Hábitos Diários</h2>
-                  <p className="text-[11px] text-slate-400">Entendendo sua rotina.</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
-                    <span className="text-xs font-semibold text-slate-700">Fuma?</span>
-                    <div className="flex gap-3">
-                      {['sim', 'nao'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 text-xs font-medium capitalize text-slate-600">
-                          <input type="radio" name="fuma" value={opt} checked={formData.fuma === opt} onChange={e => handleChange('fuma', e.target.value)} className="h-3.5 w-3.5 text-blue-600"/> {opt}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Procedimento de interesse</label>
-                    <input type="text" value={formData.rotinaSkincare} onChange={e => handleChange('rotinaSkincare', e.target.value)} placeholder="Ex: Preenchimento, Botox, Limpeza de pele" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-500 focus:bg-white transition-all"/>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Consentimento</h2>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 max-h-36 overflow-y-auto text-[10px] leading-relaxed text-slate-600 space-y-2">
-                  <p className="font-bold text-slate-700">DECLARAÇÃO DE RESPONSABILIDADE</p>
-                  <p>1. Confirmo que todas as informações prestadas são rigorosamente verdadeiras.</p>
-                  <p>2. Fui informado(a) sobre as indicações e cuidados do procedimento.</p>
-                </div>
-                <div className="pt-1">
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" required checked={formData.aceitaTermos} onChange={e => handleChange('aceitaTermos', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600"/>
-                    <span className="text-[11px] text-slate-600 leading-tight">Declaro que li e aceito os termos.</span>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <button type="button" onClick={voltar} disabled={step === 1} className={`flex items-center gap-1 text-xs font-semibold text-slate-500 px-2 py-1.5 ${step === 1 ? 'opacity-0 pointer-events-none' : ''}`}>
-                <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-              </button>
-
-              {step < 4 ? (
-                <button type="button" onClick={avancar} className="flex items-center gap-1 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm">
-                  Avançar <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              ) : (
-                <button type="submit" disabled={!formData.aceitaTermos} className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-50">
-                  Enviar Respostas
-                </button>
-              )}
             </div>
 
-          </form>
-        </div>
-      </main>
+            {/* Histórico Médico Crítico */}
+            <div className="pt-2">
+              <label className="text-[11px] font-bold text-slate-600 block mb-2">Histórico Médico Crítico</label>
+              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Gestante ou Lactante?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Possui alguma doença autoimune? (Lúpus, Vitiligo)</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>É diabético ou tem problemas de cicatrização/queloide?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Possui problemas cardíacos ou usa marca-passo?</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Alergias */}
+            <div className="pt-2">
+              <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Conhecidas</label>
+              <textarea placeholder="Liste alergias a medicamentos (Aspirina, Dipirona), cosméticos, látex, esparadrapo, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
+            </div>
+
+            {/* Medicamentos em Uso */}
+            <div className="pt-2">
+              <label className="text-[11px] font-bold text-slate-600 block mb-2">Medicamentos em Uso</label>
+              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Usa Roacutan (Isotretinoína)?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Usa anticoagulantes ou corticoides?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
+                  <span>Usa ácidos na rotina de skincare atual (Retinol, Glicólico)?</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. BLOCOS MODULARES DINÂMICOS (ATIVADOS CONFORME O SELETOR ACIMA) */}
+          
+          {/* MODULO: LASH DESIGNER */}
+          {servicoSelecionado === "lash" && (
+            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
+              <h2 className="text-xs font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Bloco Lash Designer</h2>
+              <div className="space-y-2 bg-blue-50/30 p-4 rounded-xl border border-blue-100/70">
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
+                  <span>Sofre de claustrofobia? (Olhos fechados por aprox. 2h)</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
+                  <span>Tem o hábito de dormir de bruços?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
+                  <span>Passou por cirurgia ocular recente (menos de 6 meses)?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
+                  <span>Histórico de conjuntivite frequente ou sensibilidade ocular extrema?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
+                  <span>Alergia conhecida a cianoacrilato (base da cola de cílios)?</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* MODULO: MAQUIAGEM */}
+          {servicoSelecionado === "make" && (
+            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
+              <h2 className="text-xs font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-3.5 w-3.5" /> Bloco Maquiagem Profissional</h2>
+              <div className="space-y-3 bg-purple-50/30 p-4 rounded-xl border border-purple-100/70">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Qual o seu tipo de pele auto-percebido?</label>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white">
+                    <option>Mista</option>
+                    <option>Oleosa</option>
+                    <option>Seca</option>
+                    <option>Normal</option>
+                  </select>
+                </div>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700 pt-1">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-purple-600 h-4 w-4"/>
+                  <span>Usa lentes de contato no momento?</span>
+                </label>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Possui alergia a alguma marca ou componente de maquiagem?</label>
+                  <input type="text" placeholder="Ex: Parabenos, marca X..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white"/>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODULO: LIMPEZA DE PELE */}
+          {servicoSelecionado === "pele" && (
+            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
+              <h2 className="text-xs font-bold text-teal-600 uppercase tracking-widest flex items-center gap-2"><Droplet className="h-3.5 w-3.5" /> Bloco Limpeza de Pele</h2>
+              <div className="space-y-3 bg-teal-50/30 p-4 rounded-xl border border-teal-100/70">
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
+                  <span>Histórico de herpes labial ativo?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
+                  <span>Teve exposição solar recente (praia/piscina nos últimos 7 dias)?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
+                  <span>Possui tendência a manchas (Hiperpigmentação Pós-Inflamatória)?</span>
+                </label>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Sua sensibilidade a dor é:</label>
+                  <div className="flex gap-4 mt-1">
+                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Baixa</label>
+                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Média</label>
+                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Alta</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODULO: BOTOX / PREENCHIMENTO */}
+          {servicoSelecionado === "botox" && (
+            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
+              <h2 className="text-xs font-bold text-rose-600 uppercase tracking-widest flex items-center gap-2"><Syringe className="h-3.5 w-3.5" /> Bloco Botox & Preenchedores</h2>
+              <div className="space-y-3 bg-rose-50/30 p-4 rounded-xl border border-rose-100/70">
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
+                  <span>Já realizou aplicação de Botox ou preenchedores antes?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
+                  <span>Portador de doenças neuromusculares (ex: Miastenia Gravis)?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
+                  <span>Possui preenchimento definitivo no local da aplicação (ex: PMMA)?</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
+                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
+                  <span>Tomou alguma vacina nos últimos 15 dias?</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* 3. FECHAMENTO LEGAL & ASSINATURA DIGITAL */}
+          <div className="space-y-4 pt-4 border-t border-slate-200">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> 3. Fechamento Legal</h2>
+            
+            <div className="space-y-4">
+              {/* Checkbox de Consentimento */}
+              <label className="flex items-start gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <input required type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0"/>
+                <span className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Declaro que todas as informações acima são verdadeiras e completas. Estou ciente de que a omissão de dados de saúde pode comprometer a segurança e o resultado final do procedimento estético realizado.
+                </span>
+              </label>
+
+              {/* Pad de Desenho da Assinatura */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-slate-400" /> Assinatura Digital (Desenhe com o dedo/mouse no quadro)</label>
+                  {assinado && (
+                    <button type="button" onClick={limparAssinatura} className="text-[10px] font-bold text-rose-600 flex items-center gap-1 hover:underline"><Trash2 className="h-3 w-3" /> Limpar</button>
+                  )}
+                </div>
+                
+                <div className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden h-40 relative touch-none">
+                  <canvas 
+                    ref={canvasRef}
+                    width={520}
+                    height={160}
+                    className="w-full h-full cursor-crosshair bg-slate-50/20"
+                    onMouseDown={iniciarDesenho}
+                    onMouseMove={desenhar}
+                    onMouseUp={pararDesenho}
+                    onMouseLeave={pararDesenho}
+                    onTouchStart={iniciarDesenho}
+                    onTouchMove={desenhar}
+                    onTouchEnd={pararDesenho}
+                  />
+                  {!assinado && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-[10px] font-bold text-slate-400/80 uppercase tracking-wider">
+                      Espaço para assinatura
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BOTÃO DE SUBMIT */}
+          <button type="submit" className="w-full bg-slate-950 text-white text-xs font-bold py-3.5 rounded-xl shadow-sm hover:bg-slate-800 transition-all active:scale-[0.99]">
+            Finalizar e Enviar Anamnese
+          </button>
+
+        </form>
+      </div>
     </div>
   );
 }
