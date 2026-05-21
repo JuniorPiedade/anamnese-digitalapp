@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  LayoutDashboard, FileText, Users, Settings, Camera, Save, Building2, Briefcase, Check, Info
+  LayoutDashboard, FileText, Users, Settings, Camera, Save, Building2, Briefcase, Info
 } from 'lucide-react';
 
 export default function ConfiguracoesPage() {
@@ -144,7 +144,7 @@ export default function ConfiguracoesPage() {
               <Save className="h-4 w-4" />
               {salvando ? "Salvando..." : "Salvar Alterações"}
             </button>
-            {salvoSucesso && <p className="text-center sm:text-left text-xs font-bold text-emerald-600 animate-bounce">✓ Perfil atualizado com sucesso!</p>}
+            {salvoSucesso && <p className="text-center sm:text-left text-xs font-bold text-emerald-600 animate-bounce">✓ Perfil updated com sucesso!</p>}
           </form>
         </main>
       </div>
