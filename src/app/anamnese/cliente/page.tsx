@@ -1,49 +1,101 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  User, ShieldAlert, Activity, Eye, Sparkles, Droplet, Syringe, Check, FileText, Trash2 
+  User, ShieldAlert, Eye, Sparkles, Droplet, Syringe, Check, FileText, Trash2 
 } from 'lucide-react';
 
 export default function FormularioAnamneseClientePage() {
-  // Controle de Abas/Etapas ou Serviço Selecionado para simular o comportamento modular dinâmico
   const [servicoSelecionado, setServicoSelecionado] = useState<"lash" | "make" | "pele" | "botox" | "">("");
   const [sucesso, setSucesso] = useState(false);
   const [assinado, setAssinado] = useState(false);
+  
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const isDrawing = useRef(false);
+
+  // --- AJUSTE DINÂMICO DE RESOLUÇÃO DO CANVAS ---
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+
+    const redimensionarCanvas = () => {
+      // Guarda o desenho atual antes de redimensionar (opcional)
+      const ctx = canvas.getContext('2d');
+      let desenhoTemporario: ImageData | null = null;
+      if (ctx && canvas.width > 0 && canvas.height > 0 && assinado) {
+        desenhoTemporario = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      }
+
+      // Define a resolução interna baseada no tamanho real do container na tela
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+
+      // Restaura o desenho e reconfigura o estilo do traço
+      if (ctx) {
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#0f172a';
+        if (desenhoTemporario) {
+          ctx.putImageData(desenhoTemporario, 0, 0);
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(() => redimensionarCanvas());
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, [assinado]);
+
+  // --- AUXILIAR PARA CAPTURAR COORDENADAS (MOUSE OU TOUCH) ---
+  const obterCoordenadas = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Verifica se é um evento de Touch (Mobile) ou Mouse (Desktop)
+    if ('touches' in e) {
+      if (e.touches.length === 0) return null;
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top
+      };
+    } else {
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+  };
 
   // --- LÓGICA DO CANVAS DE ASSINATURA ---
   const iniciarDesenho = (e: React.MouseEvent | React.TouchEvent) => {
     if (!canvasRef.current) return;
     isDrawing.current = true;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#0f172a'; // slate-900
-
-    const rect = canvas.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const coords = obterCoordenadas(e, canvas);
+    if (!coords) return;
 
     ctx.beginPath();
-    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    ctx.moveTo(coords.x, coords.y);
   };
 
   const desenhar = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing.current || !canvasRef.current) return;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const coords = obterCoordenadas(e, canvas);
+    if (!coords) return;
 
-    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
     setAssinado(true);
   };
@@ -96,7 +148,7 @@ export default function FormularioAnamneseClientePage() {
 
         <form onSubmit={enviarFormulario} className="p-6 space-y-8">
           
-          {/* SELETOR DINÂMICO DE PROCEDIMENTO (Simulação de injeção automática) */}
+          {/* SELETOR DINÂMICO DE PROCEDIMENTO */}
           <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
             <label className="text-xs font-bold text-blue-900 block mb-2">Selecione o procedimento do agendamento:</label>
             <div className="grid grid-cols-2 gap-2">
@@ -160,7 +212,7 @@ export default function FormularioAnamneseClientePage() {
             {/* Alergias */}
             <div className="pt-2">
               <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Conhecidas</label>
-              <textarea placeholder="Liste alergias a medicamentos (Aspirina, Dipirona), cosméticos, látex, esparadrapo, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
+              <textarea placeholder="Liste allergies a medicamentos, cosméticos, látex, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
             </div>
 
             {/* Medicamentos em Uso */}
@@ -183,7 +235,7 @@ export default function FormularioAnamneseClientePage() {
             </div>
           </div>
 
-          {/* 2. BLOCOS MODULARES DINÂMICOS (ATIVADOS CONFORME O SELETOR ACIMA) */}
+          {/* 2. BLOCOS MODULARES DINÂMICOS */}
           
           {/* MODULO: LASH DESIGNER */}
           {servicoSelecionado === "lash" && (
@@ -220,133 +272,4 @@ export default function FormularioAnamneseClientePage() {
               <h2 className="text-xs font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-3.5 w-3.5" /> Bloco Maquiagem Profissional</h2>
               <div className="space-y-3 bg-purple-50/30 p-4 rounded-xl border border-purple-100/70">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Qual o seu tipo de pele auto-percebido?</label>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white">
-                    <option>Mista</option>
-                    <option>Oleosa</option>
-                    <option>Seca</option>
-                    <option>Normal</option>
-                  </select>
-                </div>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700 pt-1">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-purple-600 h-4 w-4"/>
-                  <span>Usa lentes de contato no momento?</span>
-                </label>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Possui alergia a alguma marca ou componente de maquiagem?</label>
-                  <input type="text" placeholder="Ex: Parabenos, marca X..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white"/>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MODULO: LIMPEZA DE PELE */}
-          {servicoSelecionado === "pele" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-teal-600 uppercase tracking-widest flex items-center gap-2"><Droplet className="h-3.5 w-3.5" /> Bloco Limpeza de Pele</h2>
-              <div className="space-y-3 bg-teal-50/30 p-4 rounded-xl border border-teal-100/70">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Histórico de herpes labial ativo?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Teve exposição solar recente (praia/piscina nos últimos 7 dias)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Possui tendência a manchas (Hiperpigmentação Pós-Inflamatória)?</span>
-                </label>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Sua sensibilidade a dor é:</label>
-                  <div className="flex gap-4 mt-1">
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Baixa</label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Média</label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Alta</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MODULO: BOTOX / PREENCHIMENTO */}
-          {servicoSelecionado === "botox" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-rose-600 uppercase tracking-widest flex items-center gap-2"><Syringe className="h-3.5 w-3.5" /> Bloco Botox & Preenchedores</h2>
-              <div className="space-y-3 bg-rose-50/30 p-4 rounded-xl border border-rose-100/70">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Já realizou aplicação de Botox ou preenchedores antes?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Portador de doenças neuromusculares (ex: Miastenia Gravis)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Possui preenchimento definitivo no local da aplicação (ex: PMMA)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Tomou alguma vacina nos últimos 15 dias?</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* 3. FECHAMENTO LEGAL & ASSINATURA DIGITAL */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> 3. Fechamento Legal</h2>
-            
-            <div className="space-y-4">
-              {/* Checkbox de Consentimento */}
-              <label className="flex items-start gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <input required type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0"/>
-                <span className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Declaro que todas as informações acima são verdadeiras e completas. Estou ciente de que a omissão de dados de saúde pode comprometer a segurança e o resultado final do procedimento estético realizado.
-                </span>
-              </label>
-
-              {/* Pad de Desenho da Assinatura */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-slate-400" /> Assinatura Digital (Desenhe com o dedo/mouse no quadro)</label>
-                  {assinado && (
-                    <button type="button" onClick={limparAssinatura} className="text-[10px] font-bold text-rose-600 flex items-center gap-1 hover:underline"><Trash2 className="h-3 w-3" /> Limpar</button>
-                  )}
-                </div>
-                
-                <div className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden h-40 relative touch-none">
-                  <canvas 
-                    ref={canvasRef}
-                    width={520}
-                    height={160}
-                    className="w-full h-full cursor-crosshair bg-slate-50/20"
-                    onMouseDown={iniciarDesenho}
-                    onMouseMove={desenhar}
-                    onMouseUp={pararDesenho}
-                    onMouseLeave={pararDesenho}
-                    onTouchStart={iniciarDesenho}
-                    onTouchMove={desenhar}
-                    onTouchEnd={pararDesenho}
-                  />
-                  {!assinado && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-[10px] font-bold text-slate-400/80 uppercase tracking-wider">
-                      Espaço para assinatura
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* BOTÃO DE SUBMIT */}
-          <button type="submit" className="w-full bg-slate-950 text-white text-xs font-bold py-3.5 rounded-xl shadow-sm hover:bg-slate-800 transition-all active:scale-[0.99]">
-            Finalizar e Enviar Anamnese
-          </button>
-
-        </form>
-      </div>
-    </div>
-  );
-}
+                  <label className="text-
