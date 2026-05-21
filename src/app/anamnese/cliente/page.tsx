@@ -22,18 +22,16 @@ export default function FormularioAnamneseClientePage() {
     const container = containerRef.current;
 
     const redimensionarCanvas = () => {
-      // Guarda o desenho atual antes de redimensionar (opcional)
       const ctx = canvas.getContext('2d');
       let desenhoTemporario: ImageData | null = null;
       if (ctx && canvas.width > 0 && canvas.height > 0 && assinado) {
         desenhoTemporario = ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
 
-      // Define a resolução interna baseada no tamanho real do container na tela
+      // Ajusta a resolução interna para dar match com o tamanho do container
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
 
-      // Restaura o desenho e reconfigura o estilo do traço
       if (ctx) {
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
@@ -54,7 +52,6 @@ export default function FormularioAnamneseClientePage() {
   const obterCoordenadas = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     
-    // Verifica se é um evento de Touch (Mobile) ou Mouse (Desktop)
     if ('touches' in e) {
       if (e.touches.length === 0) return null;
       return {
@@ -212,7 +209,7 @@ export default function FormularioAnamneseClientePage() {
             {/* Alergias */}
             <div className="pt-2">
               <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Conhecidas</label>
-              <textarea placeholder="Liste allergies a medicamentos, cosméticos, látex, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
+              <textarea placeholder="Liste alergias a medicamentos, cosméticos, látex, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
             </div>
 
             {/* Medicamentos em Uso */}
@@ -272,4 +269,9 @@ export default function FormularioAnamneseClientePage() {
               <h2 className="text-xs font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-3.5 w-3.5" /> Bloco Maquiagem Profissional</h2>
               <div className="space-y-3 bg-purple-50/30 p-4 rounded-xl border border-purple-100/70">
                 <div>
-                  <label className="text-
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Qual o seu tipo de pele auto-percebido?</label>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white">
+                    <option>Mista</option>
+                    <option>Oleosa</option>
+                    <option>Seca</option>
+                    <option>Normal
