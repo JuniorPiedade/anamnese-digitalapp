@@ -1,417 +1,192 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
-  User, ShieldAlert, Eye, Sparkles, Droplet, Syringe, Check, FileText, Trash2 
+  User, Eye, Sparkles, Droplet, Syringe, FileText, ArrowLeft, Send, CheckCircle2
 } from 'lucide-react';
 
-export default function FormularioAnamneseClientePage() {
+export default function NovaFichaPage() {
+  const router = useRouter();
+  const [cliente, setCliente] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [servicoSelecionado, setServicoSelecionado] = useState<"lash" | "make" | "pele" | "botox" | "">("");
-  const [sucesso, setSucesso] = useState(false);
-  const [assinado, setAssinado] = useState(false);
+  const [alergiasTriagem, setAlergiasTriagem] = useState("");
+  const [observacoesTriagem, setObservacoesTriagem] = useState("");
   
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const isDrawing = useRef(false);
+  const [sucesso, setSucesso] = useState(false);
+  const [baseUrl, setBaseUrl] = useState("");
 
-  // --- AJUSTE DE RESOLUÇÃO DO CANVAS (APENAS NO RESIZE REAL DO CONTAINER) ---
+  // Captura a URL base para gerar o link correto que o cliente vai acessar
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
+  const formatarProcedimentoNome = (id: string) => {
+    const nomes = { lash: "Lash Designer", make: "Maquiagem", pele: "Limpeza de Pele", botox: "Botox / Injetáveis" };
+    return nominations[id as keyof typeof nomes] || id;
+  };
 
-    const redimensionarCanvas = () => {
-      const ctx = canvas.getContext('2d');
-      
-      // Salva o desenho apenas se o canvas já continha algo
-      let desenhoTemporario: ImageData | null = null;
-      if (ctx && canvas.width > 0 && canvas.height > 0) {
-        try {
-          desenhoTemporario = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        } catch (e) {
-          console.error("Erro ao salvar traço temporário", e);
-        }
-      }
+  const gerarEEnviarFicha = (e: React.FormEvent) => {
+    e.preventDefault();
 
-      // Ajusta o tamanho interno para dar match com o DOM
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+    if (!servicoSelecionado) {
+      alert("Por favor, selecione o procedimento antes de gerar o link.");
+      return;
+    }
 
-      // Restaura as propriedades essenciais do contexto
-      if (ctx) {
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#0f172a';
-        
-        if (desenhoTemporario) {
-          ctx.putImageData(desenhoTemporario, 0, 0);
-        }
+    // 1. Limpa o telefone deixando apenas números para a API do WhatsApp (ex: 5571999999999)
+    let telefoneLimpo = telefone.replace(/\D/g, "");
+    if (telefoneLimpo.length === 11 && !telefoneLimpo.startsWith("55")) {
+      telefoneLimpo = "55" + telefoneLimpo;
+    }
+
+    // 2. Cria o ID único e o objeto da nova ficha
+    const novaFichaId = String(Date.now());
+    const novaFicha = {
+      id: novaFichaId,
+      cliente: cliente,
+      procedimento: formatarProcedimentoNome(servicoSelecionado),
+      data: "Hoje, " + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      status: "Pendente",
+      telefone: telefoneLimpo || "5571999999999",
+      triagemProfissional: {
+        alergias: alergiasTriagem || "Nenhuma informada na triagem inicial",
+        observacoes: observacoesTriagem || "Nenhuma observação inicial"
       }
     };
 
-    // Executa a configuração inicial
-    redimensionarCanvas();
-
-    const resizeObserver = new ResizeObserver(() => redimensionarCanvas());
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
-  }, []); // Removido o 'assinado' das dependências para evitar resets ao desenhar
-
-  // --- AUXILIAR PARA CAPTURAR COORDENADAS (MOUSE OU TOUCH) ---
-  const obterCoordenadas = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
-    const rect = canvas.getBoundingClientRect();
-    
-    if ('touches' in e) {
-      if (e.touches.length === 0) return null;
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top
-      };
-    } else {
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
+    // 3. Salva nativamente no localStorage junto com as outras
+    const fichasAtuais = localStorage.getItem('anamnese_fichas');
+    let listaAtualizada = [];
+    if (fichasAtuais) {
+      listaAtualizada = JSON.parse(fichasAtuais);
     }
-  };
+    listaAtualizada.unshift(novaFicha); // Coloca no topo da lista
+    localStorage.setItem('anamnese_fichas', JSON.stringify(listaAtualizada));
 
-  // --- LÓGICA DO CANVAS DE ASSINATURA ---
-  const iniciarDesenho = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!canvasRef.current) return;
+    // 4. Monta o link do cliente e dispara o WhatsApp
+    const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
+    const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que revise e preencha a sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
     
-    // Previne comportamento de scroll na página ao desenhar no mobile
-    if ('touches' in e) e.preventDefault();
+    const urlMensagemEncoded = encodeURIComponent(textoMensagem);
+    const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
 
-    isDrawing.current = true;
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Abre o WhatsApp em nova aba
+    window.open(linkWhatsapp, '_blank');
 
-    const coords = obterCoordenadas(e, canvas);
-    if (!coords) return;
-
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
-  };
-
-  const desenhar = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing.current || !canvasRef.current) return;
-    if ('touches' in e) e.preventDefault();
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const coords = obterCoordenadas(e, canvas);
-    if (!coords) return;
-
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-    
-    if (!assinado) {
-      setAssinado(true);
-    }
-  };
-
-  const pararDesenho = () => {
-    isDrawing.current = false;
-  };
-
-  const limparAssinatura = () => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setAssinado(false);
-  };
-
-  const enviarFormulario = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assinado) {
-      alert("Por favor, preencha a sua assinatura digital antes de enviar.");
-      return;
-    }
+    // Ativa tela de sucesso interna
     setSucesso(true);
   };
 
   if (sucesso) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-slate-800 antialiased font-sans">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
-          <div className="h-16 w-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
-            <Check className="h-8 w-8" />
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm space-y-5">
+          <div className="h-14 w-14 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <CheckCircle2 className="h-7 w-7" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Ficha Enviada com Sucesso!</h2>
-          <p className="text-xs text-slate-500 mt-2">Obrigado por responder. Suas informações já estão salvas e seguras no painel do profissional.</p>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Ficha Inicial Gerada!</h2>
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              O link foi gerado e enviado via WhatsApp. A ficha do paciente <strong>{cliente}</strong> já se encontra no seu painel com o status <span className="text-amber-600 font-semibold">Pendente</span>.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <button 
+              onClick={() => router.push('/dashboard')} 
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all"
+            >
+              Ir para o Dashboard
+            </button>
+            <button 
+              onClick={() => {
+                setSucesso(false);
+                setCliente("");
+                setTelefone("");
+                setServicoSelecionado("");
+                setAlergiasTriagem("");
+                setObservacoesTriagem("");
+              }} 
+              className="w-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold py-2.5 rounded-xl transition-all"
+            >
+              Gerar outra Ficha
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-8 px-4">
-      <div className="max-w-xl w-full mx-auto bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-6 px-4">
+      <div className="max-w-md w-full mx-auto space-y-4">
         
-        {/* Cabeçalho do Formulário */}
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Ficha de Anamnese Digital</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Por favor, responda com atenção. Seus dados estão protegidos.</p>
-        </div>
+        {/* Botão de Voltar */}
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Painel
+        </Link>
 
-        <form onSubmit={enviarFormulario} className="p-6 space-y-8">
-          
-          {/* SELETOR DINÂMICO DE PROCEDIMENTO */}
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
-            <label className="text-xs font-bold text-blue-900 block mb-2">Selecione o procedimento do agendamento:</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setServicoSelecionado("lash")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'lash' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Eye className="h-3.5 w-3.5" /> Lash Designer</button>
-              <button type="button" onClick={() => setServicoSelecionado("make")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'make' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Sparkles className="h-3.5 w-3.5" /> Maquiagem</button>
-              <button type="button" onClick={() => setServicoSelecionado("pele")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'pele' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Droplet className="h-3.5 w-3.5" /> Limpeza de Pele</button>
-              <button type="button" onClick={() => setServicoSelecionado("botox")} className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-semibold transition-all ${servicoSelecionado === 'botox' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Syringe className="h-3.5 w-3.5" /> Botox / Preenchedores</button>
-            </div>
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+          {/* Cabeçalho */}
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" /> Preparar Nova Ficha de Anamnese
+            </h1>
+            <p className="text-[11px] text-slate-500 mt-0.5">Insira os dados básicos do paciente para disparar o link exclusivo.</p>
           </div>
 
-          {/* 1. BLOCO CORE (OBRIGATÓRIO) */}
-          <div className="space-y-4">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><User className="h-3.5 w-3.5 text-slate-400" /> 1. Bloco Core (Obrigatório)</h2>
+          <form onSubmit={gerarEEnviarFicha} className="p-5 space-y-5">
             
+            {/* DADOS DE CONTATO DO PACIENTE */}
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Nome Completo</label>
-                <input required type="text" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Data de Nascimento</label>
-                  <input required type="date" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Profissão / Ocupação</label>
-                  <input required type="text" placeholder="Ex: Advogada" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Nome do Paciente / Cliente</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="Ex: Amanda Bezerra"
+                    value={cliente}
+                    onChange={(e) => setCliente(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">WhatsApp</label>
-                <input required type="tel" placeholder="(71) 99999-9999" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all"/>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">WhatsApp do Paciente</label>
+                <input 
+                  required 
+                  type="tel" 
+                  placeholder="Ex: 71999999999 (Apenas números com DDD)"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
+                />
               </div>
             </div>
 
-            {/* Histórico Médico Crítico */}
-            <div className="pt-2">
-              <label className="text-[11px] font-bold text-slate-600 block mb-2">Histórico Médico Crítico</label>
-              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Gestante ou Lactante?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Possui alguma doença autoimune? (Lúpus, Vitiligo)</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>É diabético ou tem problemas de cicatrização/queloide?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Possui problemas cardíacos ou usa marca-passo?</span>
-                </label>
+            {/* SELEÇÃO DO PROCEDIMENTO */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-600 block mb-1.5">Procedimento Agendado</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setServicoSelecionado("lash")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'lash' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Eye className="h-3.5 w-3.5" /> Lash Designer</button>
+                <button type="button" onClick={() => setServicoSelecionado("make")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'make' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Sparkles className="h-3.5 w-3.5" /> Maquiagem</button>
+                <button type="button" onClick={() => setServicoSelecionado("pele")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'pele' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Droplet className="h-3.5 w-3.5" /> Limpeza de Pele</button>
+                <button type="button" onClick={() => setServicoSelecionado("botox")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'botox' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Syringe className="h-3.5 w-3.5" /> Botox / Injetáveis</button>
               </div>
             </div>
 
-            {/* Alergias */}
-            <div className="pt-2">
-              <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Conhecidas</label>
-              <textarea placeholder="Liste alergias a medicamentos, cosméticos, látex, iodo ou metais..." rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 bg-slate-50/30 transition-all resize-none"/>
-            </div>
+            <hr className="border-slate-100" />
 
-            {/* Medicamentos em Uso */}
-            <div className="pt-2">
-              <label className="text-[11px] font-bold text-slate-600 block mb-2">Medicamentos em Uso</label>
-              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Usa Roacutan (Isotretinoína)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Usa anticoagulantes ou corticoides?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"/>
-                  <span>Usa ácidos na rotina de skincare atual (Retinol, Glicólico)?</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. BLOCOS MODULARES DINÂMICOS */}
-          
-          {/* MODULO: LASH DESIGNER */}
-          {servicoSelecionado === "lash" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Bloco Lash Designer</h2>
-              <div className="space-y-2 bg-blue-50/30 p-4 rounded-xl border border-blue-100/70">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
-                  <span>Sofre de claustrofobia? (Olhos fechados por aprox. 2h)</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
-                  <span>Tem o hábito de dormir de bruços?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
-                  <span>Passou por cirurgia ocular recente (menos de 6 meses)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
-                  <span>Histórico de conjuntivite frequente ou sensibilidade ocular extrema?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-blue-600 h-4 w-4"/>
-                  <span>Alergia conhecida a cianoacrilato (base da cola de cílios)?</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* MODULO: MAQUIAGEM */}
-          {servicoSelecionado === "make" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-3.5 w-3.5" /> Bloco Maquiagem Profissional</h2>
-              <div className="space-y-3 bg-purple-50/30 p-4 rounded-xl border border-purple-100/70">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Qual o seu tipo de pele auto-percebido?</label>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white">
-                    <option>Mista</option>
-                    <option>Oleosa</option>
-                    <option>Seca</option>
-                    <option>Normal</option>
-                  </</select>
-                </div>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700 pt-1">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-purple-600 h-4 w-4"/>
-                  <span>Usa lentes de contato no momento?</span>
-                </label>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Possui alergia a alguma marca ou componente de maquiagem?</label>
-                  <input type="text" placeholder="Ex: Parabenos, marca X..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white"/>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MODULO: LIMPEZA DE PELE */}
-          {servicoSelecionado === "pele" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-teal-600 uppercase tracking-widest flex items-center gap-2"><Droplet className="h-3.5 w-3.5" /> Bloco Limpeza de Pele</h2>
-              <div className="space-y-3 bg-teal-50/30 p-4 rounded-xl border border-teal-100/70">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Histórico de herpes labial ativo?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Teve exposição solar recente (praia/piscina nos últimos 7 dias)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 h-4 w-4"/>
-                  <span>Possui tendência a manchas (Hiperpigmentação Pós-Inflamatória)?</span>
-                </label>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Sua sensibilidade a dor é:</label>
-                  <div className="flex gap-4 mt-1">
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Baixa</label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Média</label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium"><input type="radio" name="dor" className="text-teal-600"/> Alta</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MODULO: BOTOX / PREENCHIMENTO */}
-          {servicoSelecionado === "botox" && (
-            <div className="space-y-4 pt-4 border-t border-dashed border-slate-200 animate-fadeIn">
-              <h2 className="text-xs font-bold text-rose-600 uppercase tracking-widest flex items-center gap-2"><Syringe className="h-3.5 w-3.5" /> Bloco Botox & Preenchedores</h2>
-              <div className="space-y-3 bg-rose-50/30 p-4 rounded-xl border border-rose-100/70">
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Já realizou aplicação de Botox ou preenchedores antes?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Portador de doenças neuromusculares (ex: Miastenia Gravis)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Possui preenchimento definitivo no local da aplicação (ex: PMMA)?</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-rose-600 h-4 w-4"/>
-                  <span>Tomou alguma vacina nos últimos 15 dias?</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* 3. FECHAMENTO LEGAL & ASSINATURA DIGITAL */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3.5 w-3.5 text-slate-400" /> 3. Fechamento Legal</h2>
-            
-            <div className="space-y-4">
-              <label className="flex items-start gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <input required type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0"/>
-                <span className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Declaro que todas as informações acima são verdadeiras e completas. Estou ciente de que a omissão de dados de saúde pode comprometer a segurança e o resultado final do procedimento estético realizado.
-                </span>
-              </label>
-
-              {/* Pad de Desenho da Assinatura */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-slate-400" /> Assinatura Digital (Desenhe com o dedo/mouse no quadro)</label>
-                  {assinado && (
-                    <button type="button" onClick={limparAssinatura} className="text-[10px] font-bold text-rose-600 flex items-center gap-1 hover:underline"><Trash2 className="h-3 w-3" /> Limpar</button>
-                  )}
-                </div>
-                
-                <div ref={containerRef} className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden h-40 relative touch-none">
-                  <canvas 
-                    ref={canvasRef}
-                    className="w-full h-full cursor-crosshair bg-slate-50/20"
-                    onMouseDown={iniciarDesenho}
-                    onMouseMove={desenhar}
-                    onMouseUp={pararDesenho}
-                    onMouseLeave={pararDesenho}
-                    onTouchStart={iniciarDesenho}
-                    onTouchMove={desenhar}
-                    onTouchEnd={pararDesenho}
-                  />
-                  {!assinado && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-[10px] font-bold text-slate-400/80 uppercase tracking-wider">
-                      Espaço para assinatura
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* BOTÃO DE SUBMIT */}
-          <button type="submit" className="w-full bg-slate-950 text-white text-xs font-bold py-3.5 rounded-xl shadow-sm hover:bg-slate-800 transition-all active:scale-[0.99]">
-            Finalizar e Enviar Anamnese
-          </button>
-
-        </form>
-      </div>
-    </div>
-  );
-}
+            {/* NOTAS DE TRIAGEM RÁPIDA (OPCIONAL DO PROFISSIONAL) */}
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Prévias Relatadas (Opcional)</label>
+                <input 
+                  type="text
