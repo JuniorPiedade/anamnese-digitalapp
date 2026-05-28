@@ -1,119 +1,216 @@
+```tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { 
-  User, Eye, Sparkles, Droplet, Syringe, FileText, ArrowLeft, Send, CheckCircle2
-} from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  User,
+  Eye,
+  Sparkles,
+  Droplet,
+  Syringe,
+  FileText,
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+
+type ServicoTipo = "lash" | "make" | "pele" | "botox" | "";
+
+type Ficha = {
+  id: string;
+  cliente: string;
+  procedimento: string;
+  data: string;
+  status: string;
+  telefone: string;
+  triagemProfissional: {
+    alergias: string;
+    observacoes: string;
+  };
+};
 
 export default function NovaFichaPage() {
   const router = useRouter();
+
   const [cliente, setCliente] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [servicoSelecionado, setServicoSelecionado] = useState<"lash" | "make" | "pele" | "botox" | "">("");
+  const [servicoSelecionado, setServicoSelecionado] =
+    useState<ServicoTipo>("");
   const [alergiasTriagem, setAlergiasTriagem] = useState("");
   const [observacoesTriagem, setObservacoesTriagem] = useState("");
-  
+
   const [sucesso, setSucesso] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
+  const [erro, setErro] = useState("");
 
-  // Captura a URL base para gerar o link correto que o cliente vai acessar
   useEffect(() => {
     if (typeof window !== "undefined") {
       setBaseUrl(window.location.origin);
     }
   }, []);
 
-  const formatarProcedimentoNome = (id: string) => {
-    const nomes = { lash: "Lash Designer", make: "Maquiagem", pele: "Limpeza de Pele", botox: "Botox / Injetáveis" };
-    return nominations[id as keyof typeof nomes] || id;
+  const formatarProcedimentoNome = (id: ServicoTipo) => {
+    const nomes = {
+      lash: "Lash Designer",
+      make: "Maquiagem",
+      pele: "Limpeza de Pele",
+      botox: "Botox / Injetáveis",
+    };
+
+    return nomes[id as keyof typeof nomes] || id;
   };
 
-  const gerarEEnviarFicha = (e: React.FormEvent) => {
+  const limparFormulario = () => {
+    setCliente("");
+    setTelefone("");
+    setServicoSelecionado("");
+    setAlergiasTriagem("");
+    setObservacoesTriagem("");
+    setErro("");
+  };
+
+  const gerarEEnviarFicha = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!servicoSelecionado) {
-      alert("Por favor, selecione o procedimento antes de gerar o link.");
+    setErro("");
+
+    if (!cliente.trim()) {
+      setErro("Informe o nome do paciente.");
       return;
     }
 
-    // 1. Limpa o telefone deixando apenas números para a API do WhatsApp (ex: 5571999999999)
-    let telefoneLimpo = telefone.replace(/\D/g, "");
-    if (telefoneLimpo.length === 11 && !telefoneLimpo.startsWith("55")) {
-      telefoneLimpo = "55" + telefoneLimpo;
+    if (!telefone.trim()) {
+      setErro("Informe o WhatsApp do paciente.");
+      return;
     }
 
-    // 2. Cria o ID único e o objeto da nova ficha
-    const novaFichaId = String(Date.now());
-    const novaFicha = {
+    if (!servicoSelecionado) {
+      setErro("Selecione o procedimento antes de continuar.");
+      return;
+    }
+
+    // Limpa o telefone
+    let telefoneLimpo = telefone.replace(/\D/g, "");
+
+    // Remove DDI caso já exista
+    telefoneLimpo = telefoneLimpo.replace(/^55/, "");
+
+    // Adiciona DDI automaticamente
+    if (telefoneLimpo.length === 11) {
+      telefoneLimpo = `55${telefoneLimpo}`;
+    }
+
+    // Criação segura do ID
+    const novaFichaId = crypto.randomUUID();
+
+    const novaFicha: Ficha = {
       id: novaFichaId,
-      cliente: cliente,
+      cliente: cliente.trim(),
       procedimento: formatarProcedimentoNome(servicoSelecionado),
-      data: "Hoje, " + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      data:
+        "Hoje, " +
+        new Date().toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       status: "Pendente",
-      telefone: telefoneLimpo || "5571999999999",
+      telefone: telefoneLimpo,
       triagemProfissional: {
-        alergias: alergiasTriagem || "Nenhuma informada na triagem inicial",
-        observacoes: observacoesTriagem || "Nenhuma observação inicial"
-      }
+        alergias:
+          alergiasTriagem.trim() ||
+          "Nenhuma alergia relatada na triagem inicial",
+        observacoes:
+          observacoesTriagem.trim() ||
+          "Nenhuma observação adicional",
+      },
     };
 
-    // 3. Salva nativamente no localStorage junto com as outras
-    const fichasAtuais = localStorage.getItem('anamnese_fichas');
-    let listaAtualizada = [];
-    if (fichasAtuais) {
-      listaAtualizada = JSON.parse(fichasAtuais);
-    }
-    listaAtualizada.unshift(novaFicha); // Coloca no topo da lista
-    localStorage.setItem('anamnese_fichas', JSON.stringify(listaAtualizada));
+    // Recupera fichas existentes com proteção
+    let listaAtualizada: Ficha[] = [];
 
-    // 4. Monta o link do cliente e dispara o WhatsApp
+    try {
+      const fichasAtuais = localStorage.getItem("anamnese_fichas");
+
+      if (fichasAtuais) {
+        listaAtualizada = JSON.parse(fichasAtuais);
+      }
+    } catch (error) {
+      console.error("Erro ao recuperar fichas:", error);
+      listaAtualizada = [];
+    }
+
+    // Adiciona nova ficha
+    listaAtualizada.unshift(novaFicha);
+
+    // Salva novamente
+    localStorage.setItem(
+      "anamnese_fichas",
+      JSON.stringify(listaAtualizada)
+    );
+
+    // Link do cliente
     const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
-    const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que revise e preencha a sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
-    
+
+    // Mensagem WhatsApp
+    const textoMensagem = `Olá, ${cliente}! ✨
+
+Para realizarmos o seu procedimento de *${formatarProcedimentoNome(
+      servicoSelecionado
+    )}* com total segurança, preciso que revise e preencha sua *Ficha de Anamnese Digital*.
+
+Por favor, acesse o link abaixo para responder e assinar:
+👉 ${linkFichaCliente}
+
+Muito obrigada! ❤️`;
+
     const urlMensagemEncoded = encodeURIComponent(textoMensagem);
+
     const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
 
-    // Abre o WhatsApp em nova aba
-    window.open(linkWhatsapp, '_blank');
+    // Abre WhatsApp
+    window.open(linkWhatsapp, "_blank");
 
-    // Ativa tela de sucesso interna
+    // Exibe sucesso
     setSucesso(true);
   };
 
   if (sucesso) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-slate-800 antialiased font-sans">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm space-y-5">
-          <div className="h-14 w-14 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-            <CheckCircle2 className="h-7 w-7" />
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center shadow-sm space-y-6">
+          <div className="h-16 w-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <CheckCircle2 className="h-8 w-8" />
           </div>
+
           <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">Ficha Inicial Gerada!</h2>
-            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              O link foi gerado e enviado via WhatsApp. A ficha do paciente <strong>{cliente}</strong> já se encontra no seu painel com o status <span className="text-amber-600 font-semibold">Pendente</span>.
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+              Ficha Gerada com Sucesso
+            </h2>
+
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+              O link da anamnese foi enviado via WhatsApp para{" "}
+              <strong>{cliente}</strong>.
             </p>
           </div>
-          <div className="pt-2 flex flex-col gap-2">
-            <button 
-              onClick={() => router.push('/dashboard')} 
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all"
+
+          <div className="flex flex-col gap-3 pt-2">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold py-3 rounded-2xl transition-all"
             >
-              Ir para o Dashboard
+              Ir para Dashboard
             </button>
-            <button 
+
+            <button
               onClick={() => {
                 setSucesso(false);
-                setCliente("");
-                setTelefone("");
-                setServicoSelecionado("");
-                setAlergiasTriagem("");
-                setObservacoesTriagem("");
-              }} 
-              className="w-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold py-2.5 rounded-xl transition-all"
+                limparFormulario();
+              }}
+              className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-3 rounded-2xl transition-all"
             >
-              Gerar outra Ficha
+              Criar Nova Ficha
             </button>
           </div>
         </div>
@@ -121,72 +218,192 @@ export default function NovaFichaPage() {
     );
   }
 
+  const procedimentos = [
+    {
+      id: "lash",
+      nome: "Lash Designer",
+      icon: Eye,
+    },
+    {
+      id: "make",
+      nome: "Maquiagem",
+      icon: Sparkles,
+    },
+    {
+      id: "pele",
+      nome: "Limpeza de Pele",
+      icon: Droplet,
+    },
+    {
+      id: "botox",
+      nome: "Botox / Injetáveis",
+      icon: Syringe,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-6 px-4">
-      <div className="max-w-md w-full mx-auto space-y-4">
-        
-        {/* Botão de Voltar */}
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Painel
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-8 px-4">
+      <div className="max-w-2xl mx-auto space-y-5">
+        {/* VOLTAR */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao Painel
         </Link>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-          {/* Cabeçalho */}
-          <div className="p-5 border-b border-slate-100 bg-slate-50/50">
-            <h1 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-600" /> Preparar Nova Ficha de Anamnese
-            </h1>
-            <p className="text-[11px] text-slate-500 mt-0.5">Insira os dados básicos do paciente para disparar o link exclusivo.</p>
+        {/* CARD */}
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          {/* HEADER */}
+          <div className="border-b border-slate-100 p-6 bg-slate-50/60">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <FileText className="h-5 w-5" />
+              </div>
+
+              <div>
+                <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Nova Ficha de Anamnese
+                </h1>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  Preencha os dados iniciais para gerar o link do paciente.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={gerarEEnviarFicha} className="p-5 space-y-5">
-            
-            {/* DADOS DE CONTATO DO PACIENTE */}
-            <div className="space-y-3">
+          {/* FORM */}
+          <form
+            onSubmit={gerarEEnviarFicha}
+            className="p-6 space-y-6"
+          >
+            {/* ERRO */}
+            {erro && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4">
+                <AlertCircle className="h-5 w-5 mt-0.5" />
+                <span className="text-sm">{erro}</span>
+              </div>
+            )}
+
+            {/* DADOS */}
+            <div className="space-y-5">
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Nome do Paciente / Cliente</label>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">
+                  Nome do Paciente
+                </label>
+
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <input 
-                    required 
-                    type="text" 
-                    placeholder="Ex: Amanda Bezerra"
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+
+                  <input
+                    required
+                    type="text"
                     value={cliente}
                     onChange={(e) => setCliente(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    placeholder="Ex: Amanda Bezerra"
+                    className="w-full h-12 rounded-2xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">WhatsApp do Paciente</label>
-                <input 
-                  required 
-                  type="tel" 
-                  placeholder="Ex: 71999999999 (Apenas números com DDD)"
+                <label className="text-sm font-semibold text-slate-700 block mb-2">
+                  WhatsApp do Paciente
+                </label>
+
+                <input
+                  required
+                  type="tel"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
+                  placeholder="71999999999"
+                  className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
                 />
               </div>
             </div>
 
-            {/* SELEÇÃO DO PROCEDIMENTO */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-600 block mb-1.5">Procedimento Agendado</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setServicoSelecionado("lash")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'lash' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Eye className="h-3.5 w-3.5" /> Lash Designer</button>
-                <button type="button" onClick={() => setServicoSelecionado("make")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'make' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Sparkles className="h-3.5 w-3.5" /> Maquiagem</button>
-                <button type="button" onClick={() => setServicoSelecionado("pele")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'pele' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Droplet className="h-3.5 w-3.5" /> Limpeza de Pele</button>
-                <button type="button" onClick={() => setServicoSelecionado("botox")} className={`p-2.5 rounded-xl border text-left flex items-center gap-1.5 text-[11px] font-semibold transition-all ${servicoSelecionado === 'botox' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}><Syringe className="h-3.5 w-3.5" /> Botox / Injetáveis</button>
+            {/* PROCEDIMENTOS */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-slate-700">
+                Procedimento Agendado
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+                {procedimentos.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() =>
+                        setServicoSelecionado(item.id as ServicoTipo)
+                      }
+                      className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
+                        servicoSelecionado === item.id
+                          ? "bg-blue-600 border-blue-600 text-white shadow-md"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+
+                        <span className="text-sm font-semibold">
+                          {item.nome}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <hr className="border-slate-100" />
-
-            {/* NOTAS DE TRIAGEM RÁPIDA (OPCIONAL DO PROFISSIONAL) */}
-            <div className="space-y-3">
+            {/* TRIAGEM */}
+            <div className="space-y-5 border-t border-slate-100 pt-6">
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Alergias Prévias Relatadas (Opcional)</label>
-                <input 
-                  type="text
+                <label className="text-sm font-semibold text-slate-700 block mb-2">
+                  Alergias Relatadas (Opcional)
+                </label>
+
+                <input
+                  type="text"
+                  value={alergiasTriagem}
+                  onChange={(e) => setAlergiasTriagem(e.target.value)}
+                  placeholder="Ex: Dipirona, látex..."
+                  className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">
+                  Observações Iniciais (Opcional)
+                </label>
+
+                <textarea
+                  rows={4}
+                  value={observacoesTriagem}
+                  onChange={(e) =>
+                    setObservacoesTriagem(e.target.value)
+                  }
+                  placeholder="Informações importantes sobre o paciente..."
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none resize-none focus:border-blue-500 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* BOTÃO */}
+            <button
+              type="submit"
+              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all"
+            >
+              Gerar e Enviar Ficha
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
