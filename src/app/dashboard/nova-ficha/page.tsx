@@ -14,7 +14,7 @@ export default function FormularioAnamneseClientePage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isDrawing = useRef(false);
 
-  // --- AJUSTE DINÂMICO DE RESOLUÇÃO DO CANVAS ---
+  // --- AJUSTE DE RESOLUÇÃO DO CANVAS (APENAS NO RESIZE REAL DO CONTAINER) ---
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
@@ -23,30 +23,41 @@ export default function FormularioAnamneseClientePage() {
 
     const redimensionarCanvas = () => {
       const ctx = canvas.getContext('2d');
+      
+      // Salva o desenho apenas se o canvas já continha algo
       let desenhoTemporario: ImageData | null = null;
-      if (ctx && canvas.width > 0 && canvas.height > 0 && assinado) {
-        desenhoTemporario = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (ctx && canvas.width > 0 && canvas.height > 0) {
+        try {
+          desenhoTemporario = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          console.error("Erro ao salvar traço temporário", e);
+        }
       }
 
-      // Ajusta a resolução interna para dar match com o tamanho do container
+      // Ajusta o tamanho interno para dar match com o DOM
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
 
+      // Restaura as propriedades essenciais do contexto
       if (ctx) {
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#0f172a';
+        
         if (desenhoTemporario) {
           ctx.putImageData(desenhoTemporario, 0, 0);
         }
       }
     };
 
+    // Executa a configuração inicial
+    redimensionarCanvas();
+
     const resizeObserver = new ResizeObserver(() => redimensionarCanvas());
     resizeObserver.observe(container);
 
     return () => resizeObserver.disconnect();
-  }, [assinado]);
+  }, []); // Removido o 'assinado' das dependências para evitar resets ao desenhar
 
   // --- AUXILIAR PARA CAPTURAR COORDENADAS (MOUSE OU TOUCH) ---
   const obterCoordenadas = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
@@ -69,6 +80,10 @@ export default function FormularioAnamneseClientePage() {
   // --- LÓGICA DO CANVAS DE ASSINATURA ---
   const iniciarDesenho = (e: React.MouseEvent | React.TouchEvent) => {
     if (!canvasRef.current) return;
+    
+    // Previne comportamento de scroll na página ao desenhar no mobile
+    if ('touches' in e) e.preventDefault();
+
     isDrawing.current = true;
     
     const canvas = canvasRef.current;
@@ -84,6 +99,7 @@ export default function FormularioAnamneseClientePage() {
 
   const desenhar = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing.current || !canvasRef.current) return;
+    if ('touches' in e) e.preventDefault();
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -94,7 +110,10 @@ export default function FormularioAnamneseClientePage() {
 
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
-    setAssinado(true);
+    
+    if (!assinado) {
+      setAssinado(true);
+    }
   };
 
   const pararDesenho = () => {
@@ -275,14 +294,14 @@ export default function FormularioAnamneseClientePage() {
                     <option>Oleosa</option>
                     <option>Seca</option>
                     <option>Normal</option>
-                  </select>
+                  </</select>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-slate-700 pt-1">
                   <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-purple-600 h-4 w-4"/>
                   <span>Usa lentes de contato no momento?</span>
                 </label>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Possui allergy a alguma marca ou componente de maquiagem?</label>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Possui alergia a alguma marca ou componente de maquiagem?</label>
                   <input type="text" placeholder="Ex: Parabenos, marca X..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none bg-white"/>
                 </div>
               </div>
