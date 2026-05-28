@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  LayoutDashboard, FileText, Settings, Plus, Search, Filter, CheckCircle2, Clock, Share2
+  LayoutDashboard, FileText, Settings, Plus, Search, Filter, CheckCircle2, Clock, Share2, X, ShieldCheck, AlertCircle
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -11,33 +11,46 @@ export default function DashboardPage() {
   const [nomeNegocio, setNomeNegocio] = useState("Meu Negócio");
   const [nicho, setNicho] = useState("Estética");
   const [baseUrl, setBaseUrl] = useState("");
+  const [fichas, setFichas] = useState<any[]>([]);
+  const [fichaSelecionada, setFichaSelecionada] = useState<any | null>(null);
 
-  // Captura a URL atual do projeto para gerar o link correto do cliente
   useEffect(() => {
+    // 1. Carrega dados de configuração da clínica
     const savedNome = localStorage.getItem('anamnese_nomeNegocio');
     const savedNicho = localStorage.getItem('anamnese_nicho');
     if (savedNome) setNomeNegocio(savedNome);
     if (savedNicho) setNicho(savedNicho);
     
-    // Define a URL base (ex: https://seu-app.vercel.app)
+    // 2. Define a URL base para geração de links dinâmicos
     if (typeof window !== "undefined") {
       setBaseUrl(window.location.origin);
     }
+
+    // 3. Carrega as Fichas Dinâmicas (Usa mock padrão apenas se o localStorage estiver vazio)
+    const fichasExemploPadrao = [
+      { id: "1", cliente: "Mariana Silva", procedimento: "Lash Designer", data: "28 Mai, 09:30", status: "Concluída", telefone: "5571999999999", triagemProfissional: { alergias: "Não relatou", observacoes: "Cliente busca efeito bem natural." } },
+      { id: "2", cliente: "Beatriz Costa", procedimento: "Limpeza de Pele", data: "27 Mai, 16:15", status: "Verificado", telefone: "5571999999999", triagemProfissional: { alergias: "Alergia a Ácido Salicílico", observacoes: "Evitar produtos com essa base." } },
+      { id: "3", cliente: "Juliana Tavares", procedimento: "Botox / Injetáveis", data: "20 Mai, 14:00", status: "Concluída", telefone: "5571999999999", triagemProfissional: { alergias: "Nenhuma", observacoes: "Retorno de 6 meses." } },
+      { id: "4", cliente: "Fernanda Ribeiro", procedimento: "Maquiagem", data: "19 Mai, 11:30", status: "Pendente", telefone: "5571999999999", triagemProfissional: { alergias: "Sensibilidade na pálpebra", observacoes: "Usar produtos hipoalergênicos." } },
+    ];
+
+    const salvas = localStorage.getItem('anamnese_fichas');
+    if (salvas) {
+      setFichas(JSON.parse(salvas));
+    } else {
+      localStorage.setItem('anamnese_fichas', JSON.stringify(fichasExemploPadrao));
+      setFichas(fichasExemploPadrao);
+    }
   }, []);
 
-  // Dados com os respectivos WhatsApps para simular o disparo real
-  const ultimasFichas = [
-    { id: 1, cliente: "Mariana Silva", procedimento: "Lash Designer", data: "Hoje, 09:30", status: "Concluída", telefone: "5571999999999" },
-    { id: 2, cliente: "Beatriz Costa", procedimento: "Limpeza de Pele", data: "Ontem, 16:15", status: "Concluída", telefone: "5571999999999" },
-    { id: 3, cliente: "Juliana Tavares", procedimento: "Botox / Injetáveis", data: "20 Mai, 14:00", status: "Concluída", telefone: "5571999999999" },
-    { id: 4, cliente: "Fernanda Ribeiro", procedimento: "Maquiagem", data: "19 Mai, 11:30", status: "Pendente", telefone: "5571999999999" },
-  ];
-
   // Função cirúrgica que monta a mensagem e abre o WhatsApp
-  const enviarLinkWhatsapp = (clienteNome: string, telefone: string) => {
-    const linkFicha = `${baseUrl}/anamnese/cliente`;
+  const enviarLinkWhatsapp = (e: React.MouseEvent, clienteNome: string, telefone: string, idFicha: string) => {
+    e.stopPropagation(); // Evita abrir o modal ao clicar no botão de enviar link
     
-    const textoMensagem = `Olá, ${clienteNome}! ✨\n\nPara realizarmos o seu procedimento com total segurança, preciso que preencha a sua *Ficha de Anamnese Digital* antes do nosso atendimento.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFicha}\n\nMuito obrigada! ❤️`;
+    // Passa o ID da ficha na URL para que o sistema saiba quem está respondendo
+    const linkFicha = `${baseUrl}/anamnese/cliente?id=${idFicha}`;
+    
+    const textoMensagem = `Olá, ${clienteNome}! ✨\n\nPara realizarmos o seu procedimento com total segurança, preciso que confira as perguntas gerais da sua *Ficha de Anamnese Digital* antes do nosso atendimento.\n\nPor favor, acesse o link abaixo para revisar e confirmar os seus dados:\n👉 ${linkFicha}\n\nMuito obrigada! ❤️`;
     
     const urlMensagemUrlEncoded = encodeURIComponent(textoMensagem);
     const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefone}&text=${urlMensagemUrlEncoded}`;
@@ -45,9 +58,24 @@ export default function DashboardPage() {
     window.open(linkWhatsapp, '_blank');
   };
 
-  const fichasFiltradas = ultimasFichas.filter(ficha => 
-    ficha.cliente.toLowerCase().includes(busca.toLowerCase()) ||
-    ficha.procedimento.toLowerCase().includes(busca.toLowerCase())
+  // Simulação de Ação do Paciente (Atualiza o status para "Verificado" instantaneamente)
+  const simularConfirmacaoPaciente = (id: string) => {
+    const fichasAtualizadas = fichas.map(f => {
+      if (f.id === id) {
+        return { ...f, status: "Verificado" };
+      }
+      return f;
+    });
+    setFichas(fichasAtualizadas);
+    localStorage.setItem('anamnese_fichas', JSON.stringify(fichasAtualizadas));
+    
+    // Atualiza o modal aberto na tela com os novos dados
+    setFichaSelecionada(fichasAtualizadas.find(f => f.id === id));
+  };
+
+  const fichasFiltradas = fichas.filter(ficha => 
+    ficha.cliente?.toLowerCase().includes(busca.toLowerCase()) ||
+    ficha.procedimento?.toLowerCase().includes(busca.toLowerCase())
   );
 
   return (
@@ -98,30 +126,29 @@ export default function DashboardPage() {
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total de Fichas</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-slate-900 tracking-tight">48</span>
-                <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md">+12%mês</span>
+                <span className="text-2xl font-bold text-slate-900 tracking-tight">{fichas.length}</span>
               </div>
             </div>
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pacientes Ativos</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aguardando Cliente</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-slate-900 tracking-tight">36</span>
-                <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded-md">Histórico total</span>
+                <span className="text-2xl font-bold text-amber-600 tracking-tight">
+                  {fichas.filter(f => f.status === 'Pendente').length}
+                </span>
               </div>
             </div>
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm col-span-2 md:col-span-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Taxa de Conclusão</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Confirmadas / Verificadas</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-slate-900 tracking-tight">94%</span>
-                <span className="text-[10px] text-slate-500 font-medium">Fichas assinadas</span>
+                <span className="text-2xl font-bold text-emerald-600 tracking-tight">
+                  {fichas.filter(f => f.status === 'Verificado' || f.status === 'Concluída').length}
+                </span>
               </div>
             </div>
           </div>
 
           {/* SEÇÃO DE BUSCA E LISTAGEM */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-            
-            {/* BARRA DE FILTROS & BUSCA */}
             <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center gap-3 bg-slate-50/40">
               <div className="relative w-full flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -133,16 +160,17 @@ export default function DashboardPage() {
                   className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
                 />
               </div>
-              <button className="flex items-center gap-1.5 border border-slate-200 bg-white px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all w-full sm:w-auto justify-center">
-                <Filter className="h-3.5 w-3.5" /> Filtrar
-              </button>
             </div>
 
             {/* LISTA DE FICHAS COM DISPARO DE LINK */}
             <div className="divide-y divide-slate-100">
               {fichasFiltradas.length > 0 ? (
                 fichasFiltradas.map((ficha) => (
-                  <div key={ficha.id} className="p-4 sm:px-6 flex items-center justify-between hover:bg-slate-50/60 transition-all group">
+                  <div 
+                    key={ficha.id} 
+                    onClick={() => setFichaSelecionada(ficha)}
+                    className="p-4 sm:px-6 flex items-center justify-between hover:bg-slate-50/60 cursor-pointer transition-all group"
+                  >
                     <div className="flex items-center gap-3.5">
                       <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
                         <FileText className="h-4 w-4" />
@@ -158,17 +186,18 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
-                        ficha.status === 'Concluída' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 uppercase tracking-tight ${
+                        ficha.status === 'Concluída' || ficha.status === 'Verificado'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                          : 'bg-amber-50 text-amber-700 border border-amber-100'
                       }`}>
-                        {ficha.status === 'Concluída' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        {ficha.status === 'Concluída' || ficha.status === 'Verificado' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                         {ficha.status}
                       </span>
                       
-                      {/* BOTÃO PREMIUM DE ENVIAR LINK VIA WHATSAPP */}
                       <button 
-                        onClick={() => enviarLinkWhatsapp(ficha.cliente, ficha.telefone)}
-                        title="Enviar ficha via WhatsApp"
+                        onClick={(e) => enviarLinkWhatsapp(e, ficha.cliente, ficha.telefone, ficha.id)}
+                        title="Enviar link para preenchimento"
                         className="flex items-center gap-1.5 border border-slate-200 hover:border-emerald-200 bg-white hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 hover:text-emerald-700 transition-all"
                       >
                         <Share2 className="h-3 w-3" />
@@ -179,15 +208,67 @@ export default function DashboardPage() {
                 ))
               ) : (
                 <div className="p-8 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Nenhuma ficha encontrada para "{busca}"
+                  Nenhuma ficha ativa encontrada.
                 </div>
               )}
             </div>
-            
           </div>
-
         </main>
       </div>
+
+      {/* MODAL DETALHADO DA FICHA + SIMULADOR DO PACIENTE */}
+      {fichaSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={() => setFichaSelecionada(null)} />
+          
+          <div className="relative w-full md:max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col z-10 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">{fichaSelecionada.cliente}</h3>
+                <p className="text-[10px] text-slate-400 uppercase font-semibold tracking-tight">{fichaSelecionada.procedimento}</p>
+              </div>
+              <button onClick={() => setFichaSelecionada(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-100 space-y-2 text-xs">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Triagem Clínica Geral</span>
+                <p><strong className="text-slate-600">Alergias:</strong> {fichaSelecionada.triagemProfissional?.alergias || "Nenhuma informada"}</p>
+                <p><strong className="text-slate-600">Observações:</strong> {fichaSelecionada.triagemProfissional?.observacoes || "Nenhuma informada"}</p>
+              </div>
+
+              {/* ÁREA DE TESTE DE FLUXO (SIMULADOR DO CLIENTE) */}
+              {fichaSelecionada.status === 'Pendente' ? (
+                <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl space-y-2">
+                  <div className="flex gap-2 text-amber-800">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="text-[11px]">
+                      <p className="font-bold">Aguardando confirmação externa</p>
+                      <p className="text-amber-600/90 mt-0.5">O link foi enviado. Clique no botão abaixo para simular que o seu cliente abriu no celular e confirmou tudo.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => simularConfirmacaoPaciente(fichaSelecionada.id)}
+                    className="w-full mt-1 flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold py-2 rounded-lg shadow-xs active:scale-[0.98] transition-all"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" /> Simular Confirmação do Paciente
+                  </button>
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex gap-2.5 text-emerald-800 text-[11px]">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Status: Verificado!</p>
+                    <p className="text-emerald-600/90 mt-0.5">O paciente já revisou o link enviado pelo WhatsApp e confirmou todas as informações com sucesso.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
