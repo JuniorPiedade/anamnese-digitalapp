@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from "../../../../supabaseClient";
 
 // Dentro do seu componente, na função de salvar a ficha:
 const salvarFicha = async (dadosDaAnamnese: any) => {
