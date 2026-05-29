@@ -14,8 +14,8 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-// Importa a conexão do Supabase que criamos na pasta lib
-import { supabase } from "@/lib/supabase";
+// IMPORTAÇÃO CORRIGIDA: Caminho relativo para achar o arquivo na raiz da pasta de código
+import { supabase } from "../../../supabaseClient";
 
 type ServicoTipo = "lash" | "make" | "pele" | "botox" | "";
 
@@ -59,7 +59,6 @@ export default function NovaFichaPage() {
     setErro("");
   };
 
-  // Transformamos a função em ASYNC para conseguir esperar o banco responder
   const gerarEEnviarFicha = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -94,10 +93,10 @@ export default function NovaFichaPage() {
     // Criação segura do ID
     const novaFichaId = crypto.randomUUID();
 
-    // Objeto formatado com os dados correspondentes às colunas do Supabase
+    // Objeto formatado de acordo com as colunas do seu banco
     const novaFicha = {
       id: novaFichaId,
-      nome: cliente.trim(), // Ajustado de 'cliente' para 'nome' para bater com o seu Supabase
+      nome: cliente.trim(), // Salvando na coluna 'nome' conforme seu Supabase
       procedimento: formatarProcedimentoNome(servicoSelecionado),
       data:
         "Hoje, " +
@@ -116,11 +115,10 @@ export default function NovaFichaPage() {
       .from("cadastros")
       .insert([novaFicha]);
 
-    // Se o banco retornar um erro (ex: tabela não existe ou chaves erradas)
     if (error) {
       console.error("Erro ao salvar no Supabase:", error);
       setErro("Erro ao salvar no banco de dados: " + error.message);
-      return; // Para o código aqui e não abre o WhatsApp
+      return;
     }
 
     // Link do cliente
@@ -191,26 +189,10 @@ Muito obrigada! ❤️`;
   }
 
   const procedimentos = [
-    {
-      id: "lash",
-      nome: "Lash Designer",
-      icon: Eye,
-    },
-    {
-      id: "make",
-      nome: "Maquiagem",
-      icon: Sparkles,
-    },
-    {
-      id: "pele",
-      nome: "Limpeza de Pele",
-      icon: Droplet,
-    },
-    {
-      id: "botox",
-      nome: "Botox / Injetáveis",
-      icon: Syringe,
-    },
+    { id: "lash", nome: "Lash Designer", icon: Eye },
+    { id: "make", nome: "Maquiagem", icon: Sparkles },
+    { id: "pele", nome: "Limpeza de Pele", icon: Droplet },
+    { id: "botox", nome: "Botox / Injetáveis", icon: Syringe },
   ];
 
   return (
@@ -251,7 +233,6 @@ Muito obrigada! ❤️`;
             onSubmit={gerarEEnviarFicha}
             className="p-6 space-y-6"
           >
-            {/* ERRO */}
             {erro && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4">
                 <AlertCircle className="h-5 w-5 mt-0.5" />
