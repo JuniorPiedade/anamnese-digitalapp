@@ -94,10 +94,10 @@ export default function NovaFichaPage() {
     // Criação segura do ID
     const novaFichaId = crypto.randomUUID();
 
-    // Objeto formatado com os dados da ficha
+    // Objeto formatado com os dados correspondentes às colunas do Supabase
     const novaFicha = {
       id: novaFichaId,
-      cliente: cliente.trim(),
+      nome: cliente.trim(), // Ajustado de 'cliente' para 'nome' para bater com o seu Supabase
       procedimento: formatarProcedimentoNome(servicoSelecionado),
       data:
         "Hoje, " +
@@ -111,7 +111,7 @@ export default function NovaFichaPage() {
       observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
-    // MÁGICA AQUI: Enviando os dados direto para o Supabase (Tabela 'cadastros')
+    // Enviando os dados direto para o Supabase (Tabela 'cadastros')
     const { error } = await supabase
       .from("cadastros")
       .insert([novaFicha]);
@@ -346,3 +346,32 @@ Muito obrigada! ❤️`;
                   placeholder="Ex: Dipirona, látex..."
                   className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">
+                  Observações Iniciais (Opcional)
+                </label>
+
+                <textarea
+                  rows={4}
+                  value={observacoesTriagem}
+                  onChange={(e) => setObservacoesTriagem(e.target.value)}
+                  placeholder="Informações importantes sobre o paciente..."
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none resize-none focus:border-blue-500 transition-all"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all"
+            >
+              Gerar e Enviar Ficha
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
