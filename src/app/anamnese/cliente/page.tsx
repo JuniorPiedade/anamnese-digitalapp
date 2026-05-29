@@ -1,7 +1,14 @@
-"use client";
+import { supabase } from '@/lib/supabase'
 
-import FormularioComponent from "./formulario";
+// Dentro do seu componente, na função de salvar a ficha:
+const salvarFicha = async (dadosDaAnamnese: any) => {
+  const { data, error } = await supabase
+    .from('anamneses') // Nome da tabela que você criou no painel do Supabase
+    .insert([dadosDaAnamnese])
 
-export default function FormularioAnamneseClientePage() {
-  return <FormularioComponent />;
+  if (error) {
+    alert('Erro ao salvar no banco de dados: ' + error.message)
+  } else {
+    alert('Ficha salva com sucesso no Supabase!')
+  }
 }
