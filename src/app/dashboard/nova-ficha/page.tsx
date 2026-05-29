@@ -111,9 +111,9 @@ export default function NovaFichaPage() {
       observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
-    // MÁGICA AQUI: Enviando os dados direto para o Supabase
+    // MÁGICA AQUI: Enviando os dados direto para o Supabase (Tabela 'cadastros')
     const { error } = await supabase
-      .from("anamneses") // Nome da tabela que você criou lá no Supabase
+      .from("cadastros")
       .insert([novaFicha]);
 
     // Se o banco retornar um erro (ex: tabela não existe ou chaves erradas)
@@ -346,28 +346,3 @@ Muito obrigada! ❤️`;
                   placeholder="Ex: Dipirona, látex..."
                   className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
                 />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">
-                  Observações Iniciais (Opcional)
-                </label>
-
-                <textarea
-                  rows={4}
-                  value={observacoesTriagem}
-                  onChange={(e) =>
-                    setObservacoesTriagem(e.target.value)
-                  }
-                  placeholder="Informações importantes sobre o paciente..."
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none resize-none focus:border-blue-500 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* BOTÃO */}
-            <button
-              type="submit"
-              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all"
-            >
-              Gerar e Enviar F
