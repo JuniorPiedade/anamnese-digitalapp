@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -15,21 +14,10 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+// Importa a conexão do Supabase que criamos na pasta lib
+import { supabase } from "@/lib/supabase";
 
 type ServicoTipo = "lash" | "make" | "pele" | "botox" | "";
-
-type Ficha = {
-  id: string;
-  cliente: string;
-  procedimento: string;
-  data: string;
-  status: string;
-  telefone: string;
-  triagemProfissional: {
-    alergias: string;
-    observacoes: string;
-  };
-};
 
 export default function NovaFichaPage() {
   const router = useRouter();
@@ -71,7 +59,8 @@ export default function NovaFichaPage() {
     setErro("");
   };
 
-  const gerarEEnviarFicha = (e: React.FormEvent<HTMLFormElement>) => {
+  // Transformamos a função em ASYNC para conseguir esperar o banco responder
+  const gerarEEnviarFicha = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setErro("");
@@ -105,7 +94,8 @@ export default function NovaFichaPage() {
     // Criação segura do ID
     const novaFichaId = crypto.randomUUID();
 
-    const novaFicha: Ficha = {
+    // Objeto formatado com os dados da ficha
+    const novaFicha = {
       id: novaFichaId,
       cliente: cliente.trim(),
       procedimento: formatarProcedimentoNome(servicoSelecionado),
@@ -117,38 +107,21 @@ export default function NovaFichaPage() {
         }),
       status: "Pendente",
       telefone: telefoneLimpo,
-      triagemProfissional: {
-        alergias:
-          alergiasTriagem.trim() ||
-          "Nenhuma alergia relatada na triagem inicial",
-        observacoes:
-          observacoesTriagem.trim() ||
-          "Nenhuma observação adicional",
-      },
+      alergias: alergiasTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
+      observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
-    // Recupera fichas existentes com proteção
-    let listaAtualizada: Ficha[] = [];
+    // MÁGICA AQUI: Enviando os dados direto para o Supabase
+    const { error } = await supabase
+      .from("anamneses") // Nome da tabela que você criou lá no Supabase
+      .insert([novaFicha]);
 
-    try {
-      const fichasAtuais = localStorage.getItem("anamnese_fichas");
-
-      if (fichasAtuais) {
-        listaAtualizada = JSON.parse(fichasAtuais);
-      }
-    } catch (error) {
-      console.error("Erro ao recuperar fichas:", error);
-      listaAtualizada = [];
+    // Se o banco retornar um erro (ex: tabela não existe ou chaves erradas)
+    if (error) {
+      console.error("Erro ao salvar no Supabase:", error);
+      setErro("Erro ao salvar no banco de dados: " + error.message);
+      return; // Para o código aqui e não abre o WhatsApp
     }
-
-    // Adiciona nova ficha
-    listaAtualizada.unshift(novaFicha);
-
-    // Salva novamente
-    localStorage.setItem(
-      "anamnese_fichas",
-      JSON.stringify(listaAtualizada)
-    );
 
     // Link do cliente
     const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
@@ -166,13 +139,12 @@ Por favor, acesse o link abaixo para responder e assinar:
 Muito obrigada! ❤️`;
 
     const urlMensagemEncoded = encodeURIComponent(textoMensagem);
-
     const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
 
     // Abre WhatsApp
     window.open(linkWhatsapp, "_blank");
 
-    // Exibe sucesso
+    // Exibe tela de sucesso
     setSucesso(true);
   };
 
@@ -398,12 +370,4 @@ Muito obrigada! ❤️`;
               type="submit"
               className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all"
             >
-              Gerar e Enviar Ficha
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-```
+              Gerar e Enviar F
