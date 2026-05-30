@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-// LINHA CORRIGIDA: Agora usando o alias oficial do projeto para evitar erros de caminhos
+// Import ajustado para a nova estratégia centralizada em src/app
 import { supabase } from "./supabaseClient";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +49,7 @@ export default function DashboardPage() {
       const { data, error } = await supabase
         .from("cadastros")
         .select("*")
-        .order("created_at", { ascending: false }); // Traz os mais recentes primeiro
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Erro ao buscar dados do Supabase:", error.message);
@@ -57,7 +57,6 @@ export default function DashboardPage() {
       }
 
       if (data) {
-        // Mapeia os dados do banco para o formato do componente
         const fichasFormatadas: Ficha[] = data.map((item: any) => ({
           id: item.id,
           cliente: item.cliente,
@@ -78,7 +77,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    // Carrega configurações visuais simples locais
     const savedNome = localStorage.getItem("anamnese_nomeNegocio");
     const savedNicho = localStorage.getItem("anamnese_nicho");
     if (savedNome) setNomeNegocio(savedNome);
@@ -88,11 +86,10 @@ export default function DashboardPage() {
       setBaseUrl(window.location.origin);
     }
 
-    // Busca os clientes reais gravados no Supabase
     buscarFichasDoSupabase();
   }, []);
 
-  // ATUALIZAÇÃO EM TEMPO REAL (Se o cliente preencher em outra tela, atualiza aqui sozinho)
+  // ATUALIZAÇÃO EM TEMPO REAL
   useEffect(() => {
     const canalRealtime = supabase
       .channel("mudancas-cadastros")
@@ -119,7 +116,6 @@ export default function DashboardPage() {
     );
   }, [fichas, busca]);
 
-  // COPIA O LINK EXCLUSIVO (Substituindo o envio forçado do WhatsApp antigo)
   const copiarLinkCliente = (e: React.MouseEvent, idFicha: string) => {
     e.stopPropagation();
     const linkFicha = `${baseUrl}/anamnese/cliente?id=${idFicha}`;
@@ -143,7 +139,8 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-sm font-bold text-slate-900 block">Klinni IA</span>
+            {/* Nome corrigido aqui para Anamnese Digital */}
+            <span className="text-sm font-bold text-slate-900 block">Anamnese Digital</span>
             <span className="text-[11px] text-slate-400">Painel de Controle</span>
           </div>
         </div>
@@ -217,4 +214,45 @@ export default function DashboardPage() {
                     className="p-5 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="
+                      <div className="h-11 w-11 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900">{ficha.cliente}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-slate-500">{ficha.procedimento}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-xs text-slate-400">{ficha.data}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-[11px] font-semibold px-3 py-1 rounded-xl border flex items-center gap-1.5 ${
+                          ficha.status === "Verificado" || ficha.status === "Concluída"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                            : "bg-amber-50 text-amber-700 border-amber-100"
+                        }`}
+                      >
+                        {ficha.status === "Verificado" || ficha.status === "Concluída" ? (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <Clock className="h-3.5 w-3.5" />
+                        )}
+                        {ficha.status}
+                      </span>
+
+                      <button
+                        onClick={(e) => copiarLinkCliente(e, ficha.id)}
+                        className="hidden sm:flex items-center gap-2 border border-slate-200 hover:border-blue-200 bg-white hover:bg-blue-50 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-blue-700 transition-all"
+                      >
+                        <Share2 className="h-3.5 w-3.5" /> Copiar Link
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-10 text-center">
+                  <p className="text-sm text-slate-400 font-medium">Nenhum cadastro encontrado na sua conta do Supabase.</p>
+                </div>
