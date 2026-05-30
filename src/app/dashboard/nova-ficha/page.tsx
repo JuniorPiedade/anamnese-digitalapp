@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, User, Scissors, Phone, FilePlus, AlertCircle } from "lucide-react";
 // LINHA CORRIGIDA: Agora usando o alias oficial do projeto
-import { supabase } from "../../../supabaseClient";
+import { supabase } from "../supabaseClient";
 
 export default function NovaFichaPage() {
   const router = useRouter();
