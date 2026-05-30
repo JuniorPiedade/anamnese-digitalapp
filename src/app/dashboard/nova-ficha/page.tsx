@@ -31,6 +31,7 @@ export default function NovaFichaPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [linkGerado, setLinkGerado] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -74,10 +75,10 @@ export default function NovaFichaPage() {
       telefoneLimpo = `55${telefoneLimpo}`;
     }
 
-    // Criando um código identificador seguro para a ficha
+    // Criando o código identificador único da ficha
     const novaFichaId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
-    // Organizando os dados para as colunas exatas do seu banco
+    // Organizando os dados para as colunas exatas da tabela do Supabase
     const novaFicha = {
       id: novaFichaId,
       cliente: cliente.trim(), 
@@ -85,11 +86,12 @@ export default function NovaFichaPage() {
       data: "Hoje, " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       status: "Pendente",
       telefone: telefoneLimpo,
-      alergias: alergiasTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
+      alergias: allergiesTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
       observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
     try {
+      // Salva o cadastro inicial pendente no Supabase
       const { error } = await supabase.from("cadastros").insert([novaFicha]);
 
       if (error) {
@@ -98,11 +100,11 @@ export default function NovaFichaPage() {
         return;
       }
 
+      // Cria o link que o cliente vai usar para responder a anamnese
       const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
-      const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que preencha sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
+      setLinkGerado(linkFichaCliente);
       
-      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${encodeURIComponent(textoMensagem)}`;
-      window.open(linkWhatsapp, "_blank");
+      // Ativa a tela de sucesso direto no sistema, sem abrir o WhatsApp
       setSucesso(true);
     } catch (err) {
       setErro("Erro inesperado ao processar o formulário.");
@@ -119,12 +121,31 @@ export default function NovaFichaPage() {
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Ficha Gerada com Sucesso</h2>
-            <p className="text-sm text-slate-500 mt-2">O link da anamnese foi gerado e enviado via WhatsApp para o cliente.</p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Ficha Criada no Sistema!</h2>
+            <p className="text-sm text-slate-500 mt-2">
+              O cadastro de <strong>{cliente}</strong> já foi gerado e aparecerá na sua dashboard.
+            </p>
           </div>
+
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-left space-y-2">
+            <span className="text-xs font-bold text-slate-400 uppercase">Link para o Cliente responder:</span>
+            <input 
+              readOnly 
+              type="text" 
+              value={linkGerado} 
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              className="w-full text-xs bg-white border border-slate-200 p-2.5 rounded-xl text-blue-600 font-mono outline-none cursor-pointer"
+            />
+            <p className="text-[10px] text-slate-400">Clique no link acima para copiar e enviar para o cliente como preferir.</p>
+          </div>
+
           <div className="flex flex-col gap-3 pt-2">
-            <button onClick={() => router.push("/dashboard")} className="w-full bg-slate-900 text-white text-sm font-semibold py-3 rounded-2xl">Ir para Dashboard</button>
-            <button onClick={() => { setSucesso(false); limparFormulario(); }} className="w-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold py-3 rounded-2xl">Criar Nova Ficha</button>
+            <button onClick={() => router.push("/dashboard")} className="w-full bg-slate-900 text-white text-sm font-semibold py-3 rounded-2xl hover:bg-slate-800 transition-all">
+              Ir para o Dashboard
+            </button>
+            <button onClick={() => { setSucesso(false); limparFormulario(); }} className="w-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold py-3 rounded-2xl hover:bg-slate-50 transition-all">
+              Criar Outra Ficha
+            </button>
           </div>
         </div>
       </div>
@@ -150,7 +171,7 @@ export default function NovaFichaPage() {
               <div className="h-11 w-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center"><FileText className="h-5 w-5" /></div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900 tracking-tight">Nova Ficha de Anamnese</h1>
-                <p className="text-sm text-slate-500 mt-1">Preencha os dados iniciais para gerar o link do paciente.</p>
+                <p className="text-sm text-slate-500 mt-1">Preencha os dados iniciais para abrir o cadastro do paciente.</p>
               </div>
             </div>
           </div>
@@ -197,7 +218,7 @@ export default function NovaFichaPage() {
               </div>
             </div>
             <button type="submit" disabled={carregando} className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold disabled:bg-slate-300">
-              {carregando ? "Gerando Ficha..." : "Gerar e Enviar Ficha"}
+              {carregando ? "Salvando Cadastro..." : "Criar Cadastro na Dashboard"}
             </button>
           </form>
         </div>
