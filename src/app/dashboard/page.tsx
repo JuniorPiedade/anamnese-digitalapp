@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-import { supabase } from "../../supabaseClient";
+// LINHA CORRIGIDA: Agora usando o alias oficial do projeto para evitar erros de caminhos
+import { supabase } from "@/supabaseClient";
 
 export const dynamic = "force-dynamic";
 
@@ -178,7 +179,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Pacientes</span>
-              <h2 className="text-3xl font-bold text-slate-990 mt-3">{fichas.length}</h2>
+              <h2 className="text-3xl font-bold text-slate-900 mt-3">{fichas.length}</h2>
             </div>
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Aguardando Resposta</span>
@@ -216,97 +217,4 @@ export default function DashboardPage() {
                     className="p-5 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-11 w-11 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
-                        <FileText className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900">{ficha.cliente}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-slate-500">{ficha.procedimento}</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-xs text-slate-400">{ficha.data}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`text-[11px] font-semibold px-3 py-1 rounded-xl border flex items-center gap-1.5 ${
-                          ficha.status === "Verificado" || ficha.status === "Concluída"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : "bg-amber-50 text-amber-700 border-amber-100"
-                        }`}
-                      >
-                        {ficha.status === "Verificado" || ficha.status === "Concluída" ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5" />
-                        )}
-                        {ficha.status}
-                      </span>
-
-                      <button
-                        onClick={(e) => copiarLinkCliente(e, ficha.id)}
-                        className="hidden sm:flex items-center gap-2 border border-slate-200 hover:border-blue-200 bg-white hover:bg-blue-50 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-blue-700 transition-all"
-                      >
-                        <Share2 className="h-3.5 w-3.5" /> Copiar Link
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-10 text-center">
-                  <p className="text-sm text-slate-400 font-medium">Nenhum cadastro encontrado na sua conta do Supabase.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
-      </div>
-
-      {/* MODAL DETALHES DA ANAMNESE */}
-      {fichaSelecionada && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setFichaSelecionada(null)} />
-          <div className="relative z-10 w-full md:max-w-md bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">{fichaSelecionada.cliente}</h3>
-                <p className="text-xs text-slate-500 mt-1">{fichaSelecionada.procedimento}</p>
-              </div>
-              <button onClick={() => setFichaSelecionada(null)} className="h-9 w-9 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all">
-                <X className="h-4 w-4 text-slate-500" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-5">
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Respostas do Formulário</span>
-                <p className="text-sm text-slate-700"><strong>Alergias:</strong> {fichaSelecionada.alergias || "Nenhuma informada"}</p>
-                <p className="text-sm text-slate-700"><strong>Observações:</strong> {fichaSelecionada.observacoes || "Nenhuma informada"}</p>
-              </div>
-
-              {fichaSelecionada.status === "Pendente" ? (
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-amber-800">Aguardando Cliente</p>
-                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">O link está ativo. Assim que a cliente preencher na tela dela, as respostas aparecerão aqui de forma automática.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex gap-3">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-emerald-800">Ficha Preenchida</p>
-                    <p className="text-xs text-emerald-700 mt-1 leading-relaxed">Os dados acima foram preenchidos e validados pela cliente com segurança.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                      <div className="
