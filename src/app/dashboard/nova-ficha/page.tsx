@@ -70,15 +70,12 @@ export default function NovaFichaPage() {
     setCarregando(true);
 
     let telefoneLimpo = telefone.replace(/\D/g, "");
-    telefoneLimpo = telefoneLimpo.replace(/^55/, "");
     if (telefoneLimpo.length === 11) {
       telefoneLimpo = `55${telefoneLimpo}`;
     }
 
-    // Criando o código identificador único da ficha
     const novaFichaId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
-    // Organizando os dados para as colunas exatas da tabela do Supabase
     const novaFicha = {
       id: novaFichaId,
       cliente: cliente.trim(), 
@@ -86,12 +83,11 @@ export default function NovaFichaPage() {
       data: "Hoje, " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       status: "Pendente",
       telefone: telefoneLimpo,
-      alergias: allergiesTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
+      alergias: alergiasTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
       observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
     try {
-      // Salva o cadastro inicial pendente no Supabase
       const { error } = await supabase.from("cadastros").insert([novaFicha]);
 
       if (error) {
@@ -100,15 +96,12 @@ export default function NovaFichaPage() {
         return;
       }
 
-      // Cria o link que o cliente vai usar para responder a anamnese
       const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
       setLinkGerado(linkFichaCliente);
-      
-      // Ativa a tela de sucesso direto no sistema, sem abrir o WhatsApp
       setSucesso(true);
     } catch (err) {
       setErro("Erro inesperado ao processar o formulário.");
-    } finally {
+    } finaly {
       setCarregando(false);
     }
   };
