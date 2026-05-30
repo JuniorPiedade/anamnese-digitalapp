@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-// IMPORTAÇÃO CORRIGIDA: Caminho relativo para achar o arquivo na raiz da pasta de código
 import { supabase } from "../../../supabaseClient";
 
 type ServicoTipo = "lash" | "make" | "pele" | "botox" | "";
@@ -24,8 +23,7 @@ export default function NovaFichaPage() {
 
   const [cliente, setCliente] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [servicoSelecionado, setServicoSelecionado] =
-    useState<ServicoTipo>("");
+  const [servicoSelecionado, setServicoSelecionado] = useState<ServicoTipo>("");
   const [alergiasTriagem, setAlergiasTriagem] = useState("");
   const [observacoesTriagem, setObservacoesTriagem] = useState("");
 
@@ -47,7 +45,6 @@ export default function NovaFichaPage() {
       pele: "Limpeza de Pele",
       botox: "Botox / Injetáveis",
     };
-
     return nomes[id as keyof typeof nomes] || id;
   };
 
@@ -64,48 +61,28 @@ export default function NovaFichaPage() {
     e.preventDefault();
     setErro("");
 
-    if (!cliente.trim()) {
-      setErro("Informe o nome do paciente.");
-      return;
-    }
-
-    if (!telefone.trim()) {
-      setErro("Informe o WhatsApp do paciente.");
-      return;
-    }
-
-    if (!servicoSelecionado) {
-      setErro("Selecione o procedimento antes de continuar.");
+    if (!cliente.trim() || !telefone.trim() || !servicoSelecionado) {
+      setErro("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
     setCarregando(true);
 
-    // Limpa o telefone
     let telefoneLimpo = telefone.replace(/\D/g, "");
-
-    // Remove DDI caso já exista
     telefoneLimpo = telefoneLimpo.replace(/^55/, "");
-
-    // Adiciona DDI automaticamente
     if (telefoneLimpo.length === 11) {
       telefoneLimpo = `55${telefoneLimpo}`;
     }
 
-    // Geração manual de ID única e segura (Evita travamentos de RLS/Crypto na Vercel)
+    // Criando um código identificador seguro para a ficha
     const novaFichaId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
-    // Objeto formatado exatamente de acordo com as colunas da sua tabela 'cadastros'
+    // Organizando os dados para as colunas exatas do seu banco
     const novaFicha = {
       id: novaFichaId,
-      cliente: cliente.trim(), // Corrigido para 'cliente' conforme a coluna real do seu banco
+      cliente: cliente.trim(), 
       procedimento: formatarProcedimentoNome(servicoSelecionado),
-      data:
-        "Hoje, " +
-        new Date().toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+      data: "Hoje, " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       status: "Pendente",
       telefone: telefoneLimpo,
       alergias: alergiasTriagem.trim() || "Nenhuma alergia relatada na triagem inicial",
@@ -113,34 +90,22 @@ export default function NovaFichaPage() {
     };
 
     try {
-      // Enviando os dados direto para o Supabase (Tabela 'cadastros')
-      const { error } = await supabase
-        .from("cadastros")
-        .insert([novaFicha]);
+      const { error } = await supabase.from("cadastros").insert([novaFicha]);
 
       if (error) {
-        console.error("Erro ao salvar no Supabase:", error);
         setErro("Erro ao salvar no banco de dados: " + error.message);
         setCarregando(false);
         return;
       }
 
-      // Link do cliente
       const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
-
-      // Mensagem WhatsApp
-      const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que revise e preencha sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
-
-      const urlMensagemEncoded = encodeURIComponent(textoMensagem);
-      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
-
-      // Abre o WhatsApp em nova aba de forma nativa
+      const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que preencha sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
+      
+      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${encodeURIComponent(textoMensagem)}`;
       window.open(linkWhatsapp, "_blank");
-
-      // Exibe tela de sucesso
       setSucesso(true);
     } catch (err) {
-      setErro("Ocorreu um erro inesperado ao processar o formulário.");
+      setErro("Erro inesperado ao processar o formulário.");
     } finally {
       setCarregando(false);
     }
@@ -153,35 +118,13 @@ export default function NovaFichaPage() {
           <div className="h-16 w-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
             <CheckCircle2 className="h-8 w-8" />
           </div>
-
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-              Ficha Gerada com Sucesso
-            </h2>
-
-            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              O link da anamnese foi enviado via WhatsApp para{" "}
-              <strong>{cliente}</strong>.
-            </p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Ficha Gerada com Sucesso</h2>
+            <p className="text-sm text-slate-500 mt-2">O link da anamnese foi gerado e enviado via WhatsApp para o cliente.</p>
           </div>
-
           <div className="flex flex-col gap-3 pt-2">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold py-3 rounded-2xl transition-all"
-            >
-              Ir para Dashboard
-            </button>
-
-            <button
-              onClick={() => {
-                setSucesso(false);
-                limparFormulario();
-              }}
-              className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-3 rounded-2xl transition-all"
-            >
-              Criar Nova Ficha
-            </button>
+            <button onClick={() => router.push("/dashboard")} className="w-full bg-slate-900 text-white text-sm font-semibold py-3 rounded-2xl">Ir para Dashboard</button>
+            <button onClick={() => { setSucesso(false); limparFormulario(); }} className="w-full bg-white border border-slate-200 text-slate-700 text-sm font-semibold py-3 rounded-2xl">Criar Nova Ficha</button>
           </div>
         </div>
       </div>
@@ -198,157 +141,62 @@ export default function NovaFichaPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased font-sans py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-5">
-        {/* VOLTAR */}
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar ao Painel
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800">
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Painel
         </Link>
-
-        {/* CARD */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-          {/* HEADER */}
           <div className="border-b border-slate-100 p-6 bg-slate-50/60">
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <FileText className="h-5 w-5" />
-              </div>
-
+              <div className="h-11 w-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center"><FileText className="h-5 w-5" /></div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-                  Nova Ficha de Anamnese
-                </h1>
-
-                <p className="text-sm text-slate-500 mt-1">
-                  Preencha os dados iniciais para gerar o link do paciente.
-                </p>
+                <h1 className="text-lg font-bold text-slate-900 tracking-tight">Nova Ficha de Anamnese</h1>
+                <p className="text-sm text-slate-500 mt-1">Preencha os dados iniciais para gerar o link do paciente.</p>
               </div>
             </div>
           </div>
-
-          {/* FORM */}
-          <form
-            onSubmit={gerarEEnviarFicha}
-            className="p-6 space-y-6"
-          >
+          <form onSubmit={gerarEEnviarFicha} className="p-6 space-y-6">
             {erro && (
-              <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4">
-                <AlertCircle className="h-5 w-5 mt-0.5" />
-                <span className="text-sm">{erro}</span>
+              <div className="flex items-start gap-3 bg-red-50 text-red-700 rounded-2xl p-4">
+                <AlertCircle className="h-5 w-5 mt-0.5" /> <span className="text-sm">{erro}</span>
               </div>
             )}
-
-            {/* DADOS */}
             <div className="space-y-5">
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">
-                  Nome do Paciente
-                </label>
-
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Nome do Paciente</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-
-                  <input
-                    required
-                    type="text"
-                    value={cliente}
-                    onChange={(e) => setCliente(e.target.value)}
-                    placeholder="Ex: Amanda Bezerra"
-                    className="w-full h-12 rounded-2xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500 transition-all"
-                  />
+                  <input required type="text" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Ex: Amanda Bezerra" className="w-full h-12 rounded-2xl border border-slate-200 pl-11 pr-4 text-sm outline-none focus:border-blue-500" />
                 </div>
               </div>
-
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">
-                  WhatsApp do Paciente
-                </label>
-
-                <input
-                  required
-                  type="tel"
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  placeholder="71999999999"
-                  className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
-                />
+                <label className="text-sm font-semibold text-slate-700 block mb-2">WhatsApp do Paciente</label>
+                <input required type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="71999999999" className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500" />
               </div>
             </div>
-
-            {/* PROCEDIMENTOS */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-slate-700">
-                Procedimento Agendado
-              </label>
-
+              <label className="text-sm font-semibold text-slate-700">Procedimento Agendado</label>
               <div className="grid grid-cols-2 gap-3">
                 {procedimentos.map((item) => {
                   const Icon = item.icon;
-
                   return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() =>
-                        setServicoSelecionado(item.id as ServicoTipo)
-                      }
-                      className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
-                        servicoSelecionado === item.id
-                          ? "bg-slate-900 border-slate-900 text-white shadow-md"
-                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-
-                        <span className="text-sm font-semibold">
-                          {item.nome}
-                        </span>
-                      </div>
+                    <button key={item.id} type="button" onClick={() => setServicoSelecionado(item.id as ServicoTipo)} className={`rounded-2xl border p-4 text-left transition-all ${servicoSelecionado === item.id ? "bg-slate-900 text-white shadow-md border-slate-900" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                      <div className="flex items-center gap-2"><Icon className="h-4 w-4" /> <span className="text-sm font-semibold">{item.nome}</span></div>
                     </button>
                   );
                 })}
               </div>
             </div>
-
-            {/* TRIAGEM */}
             <div className="space-y-5 border-t border-slate-100 pt-6">
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">
-                  Alergias Relatadas (Opcional)
-                </label>
-
-                <input
-                  type="text"
-                  value={alergiasTriagem}
-                  onChange={(e) => setAlergiasTriagem(e.target.value)}
-                  placeholder="Ex: Dipirona, látex..."
-                  className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 transition-all"
-                />
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Alergias Relatadas (Opcional)</label>
+                <input type="text" value={alergiasTriagem} onChange={(e) => setAlergiasTriagem(e.target.value)} placeholder="Ex: Dipirona, látex..." className="w-full h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500" />
               </div>
-
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">
-                  Observações Iniciais (Opcional)
-                </label>
-
-                <textarea
-                  rows={4}
-                  value={observacoesTriagem}
-                  onChange={(e) => setObservacoesTriagem(e.target.value)}
-                  placeholder="Informações importantes sobre o paciente..."
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none resize-none focus:border-blue-500 transition-all"
-                />
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Observações Iniciais (Opcional)</label>
+                <textarea rows={4} value={observacoesTriagem} onChange={(e) => setObservacoesTriagem(e.target.value)} placeholder="Informações importantes..." className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none resize-none focus:border-blue-500" />
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={carregando}
-              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all disabled:bg-slate-300"
-            >
+            <button type="submit" disabled={carregando} className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold disabled:bg-slate-300">
               {carregando ? "Gerando Ficha..." : "Gerar e Enviar Ficha"}
             </button>
           </form>
