@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { supabase } from "../../supabaseClient";
 
+export const dynamic = "force-dynamic";
+
 type StatusFicha = "Pendente" | "Verificado" | "Concluída";
 
 type Ficha = {
