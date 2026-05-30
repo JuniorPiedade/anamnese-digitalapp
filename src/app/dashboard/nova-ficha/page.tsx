@@ -32,6 +32,7 @@ export default function NovaFichaPage() {
   const [sucesso, setSucesso] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
   const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -61,7 +62,6 @@ export default function NovaFichaPage() {
 
   const gerarEEnviarFicha = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setErro("");
 
     if (!cliente.trim()) {
@@ -79,6 +79,8 @@ export default function NovaFichaPage() {
       return;
     }
 
+    setCarregando(true);
+
     // Limpa o telefone
     let telefoneLimpo = telefone.replace(/\D/g, "");
 
@@ -90,13 +92,13 @@ export default function NovaFichaPage() {
       telefoneLimpo = `55${telefoneLimpo}`;
     }
 
-    // Criação segura do ID
-    const novaFichaId = crypto.randomUUID();
+    // Geração manual de ID única e segura (Evita travamentos de RLS/Crypto na Vercel)
+    const novaFichaId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
-    // Objeto formatado de acordo com as colunas do seu banco
+    // Objeto formatado exatamente de acordo com as colunas da sua tabela 'cadastros'
     const novaFicha = {
       id: novaFichaId,
-      nome: cliente.trim(), // Salvando na coluna 'nome' conforme seu Supabase
+      cliente: cliente.trim(), // Corrigido para 'cliente' conforme a coluna real do seu banco
       procedimento: formatarProcedimentoNome(servicoSelecionado),
       data:
         "Hoje, " +
@@ -110,40 +112,38 @@ export default function NovaFichaPage() {
       observacoes: observacoesTriagem.trim() || "Nenhuma observação adicional",
     };
 
-    // Enviando os dados direto para o Supabase (Tabela 'cadastros')
-    const { error } = await supabase
-      .from("cadastros")
-      .insert([novaFicha]);
+    try {
+      // Enviando os dados direto para o Supabase (Tabela 'cadastros')
+      const { error } = await supabase
+        .from("cadastros")
+        .insert([novaFicha]);
 
-    if (error) {
-      console.error("Erro ao salvar no Supabase:", error);
-      setErro("Erro ao salvar no banco de dados: " + error.message);
-      return;
+      if (error) {
+        console.error("Erro ao salvar no Supabase:", error);
+        setErro("Erro ao salvar no banco de dados: " + error.message);
+        setCarregando(false);
+        return;
+      }
+
+      // Link do cliente
+      const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
+
+      // Mensagem WhatsApp
+      const textoMensagem = `Olá, ${cliente}! ✨\n\nPara realizarmos o seu procedimento de *${formatarProcedimentoNome(servicoSelecionado)}* com total segurança, preciso que revise e preencha sua *Ficha de Anamnese Digital*.\n\nPor favor, acesse o link abaixo para responder e assinar:\n👉 ${linkFichaCliente}\n\nMuito obrigada! ❤️`;
+
+      const urlMensagemEncoded = encodeURIComponent(textoMensagem);
+      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
+
+      // Abre o WhatsApp em nova aba de forma nativa
+      window.open(linkWhatsapp, "_blank");
+
+      // Exibe tela de sucesso
+      setSucesso(true);
+    } catch (err) {
+      setErro("Ocorreu um erro inesperado ao processar o formulário.");
+    } finally {
+      setCarregando(false);
     }
-
-    // Link do cliente
-    const linkFichaCliente = `${baseUrl}/anamnese/cliente?id=${novaFichaId}`;
-
-    // Mensagem WhatsApp
-    const textoMensagem = `Olá, ${cliente}! ✨
-
-Para realizarmos o seu procedimento de *${formatarProcedimentoNome(
-      servicoSelecionado
-    )}* com total segurança, preciso que revise e preencha sua *Ficha de Anamnese Digital*.
-
-Por favor, acesse o link abaixo para responder e assinar:
-👉 ${linkFichaCliente}
-
-Muito obrigada! ❤️`;
-
-    const urlMensagemEncoded = encodeURIComponent(textoMensagem);
-    const linkWhatsapp = `https://api.whatsapp.com/send?phone=${telefoneLimpo}&text=${urlMensagemEncoded}`;
-
-    // Abre WhatsApp
-    window.open(linkWhatsapp, "_blank");
-
-    // Exibe tela de sucesso
-    setSucesso(true);
   };
 
   if (sucesso) {
@@ -296,7 +296,7 @@ Muito obrigada! ❤️`;
                       }
                       className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
                         servicoSelecionado === item.id
-                          ? "bg-blue-600 border-blue-600 text-white shadow-md"
+                          ? "bg-slate-900 border-slate-900 text-white shadow-md"
                           : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                       }`}
                     >
@@ -346,9 +346,10 @@ Muito obrigada! ❤️`;
 
             <button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all"
+              disabled={carregando}
+              className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all disabled:bg-slate-300"
             >
-              Gerar e Enviar Ficha
+              {carregando ? "Gerando Ficha..." : "Gerar e Enviar Ficha"}
             </button>
           </form>
         </div>
