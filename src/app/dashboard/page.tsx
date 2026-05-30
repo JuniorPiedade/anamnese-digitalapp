@@ -16,7 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 // LINHA CORRIGIDA: Agora usando o alias oficial do projeto para evitar erros de caminhos
-import { supabase } from "../../supabaseClient";
+import { supabase } from "./supabaseClient";
 
 export const dynamic = "force-dynamic";
 
