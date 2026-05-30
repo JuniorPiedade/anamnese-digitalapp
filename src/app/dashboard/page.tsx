@@ -139,7 +139,6 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4" />
           </div>
           <div>
-            {/* Nome corrigido aqui para Anamnese Digital */}
             <span className="text-sm font-bold text-slate-900 block">Anamnese Digital</span>
             <span className="text-[11px] text-slate-400">Painel de Controle</span>
           </div>
@@ -256,3 +255,55 @@ export default function DashboardPage() {
                 <div className="p-10 text-center">
                   <p className="text-sm text-slate-400 font-medium">Nenhum cadastro encontrado na sua conta do Supabase.</p>
                 </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* MODAL DETALHES DA ANAMNESE */}
+      {fichaSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setFichaSelecionada(null)} />
+          <div className="relative z-10 w-full md:max-w-md bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{fichaSelecionada.cliente}</h3>
+                <p className="text-xs text-slate-500 mt-1">{fichaSelecionada.procedimento}</p>
+              </div>
+              <button onClick={() => setFichaSelecionada(null)} className="h-9 w-9 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all">
+                <X className="h-4 w-4 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Respostas do Formulário</span>
+                <p className="text-sm text-slate-700"><strong>Alergias:</strong> {fichaSelecionada.alergias || "Nenhuma informada"}</p>
+                <p className="text-sm text-slate-700"><strong>Observações:</strong> {fichaSelecionada.observacoes || "Nenhuma informada"}</p>
+              </div>
+
+              {fichaSelecionada.status === "Pendente" ? (
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-amber-800">Aguardando Cliente</p>
+                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">O link está ativo. Assim que a cliente preencher na tela dela, as respostas aparecerão aqui de forma automática.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex gap-3">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Ficha Preenchida</p>
+                    <p className="text-xs text-emerald-700 mt-1 leading-relaxed">Os dados acima foram preenchidos e validados pela cliente com segurança.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
