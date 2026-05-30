@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, AlertCircle, HeartPulse, User, ShieldCheck } from "lucide-react";
-import { supabase } from "../../../../supabaseClient";
+// LINHA 7 CORRIGIDA: Agora usando o alias oficial do projeto
+import { supabase } from "@/supabaseClient";
 
 export default function AnamneseClientePage() {
   const searchParams = useSearchParams();
